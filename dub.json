@@ -3,6 +3,6 @@
     "description": "A minimalistic event and pub-sub library",
     "copyright": "Copyright © 2015, Ianis G. Vasilev",
     "authors": ["ianis"],
-    "dependencies": {
-    }
+    "license": "Boost",
+    "targetType": "library"
 }
