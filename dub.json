@@ -1,0 +1,8 @@
+{
+    "name": "subscribed",
+    "description": "A minimalistic event and pub-sub library",
+    "copyright": "Copyright © 2015, Ianis G. Vasilev",
+    "authors": ["ianis"],
+    "dependencies": {
+    }
+}
