@@ -40,6 +40,12 @@ event();
 event -= doNothing; // Returns true, meaning that there were >=1 removed delegates
 event -= doNothing; // Returns false, meaning that there were no removed delegates
 assert(event.subscribers.length == 0); // No subscribers left
+
+event ~= doNothing;
+
+// You can off course shift and pop delegates
+event.shift; // Doesn't throw
+assertThrown!AssertError(event.shift); // Throws and AssertError, because there is nothing to return
 ```
 
 * `subscribed.pubsub` is based on events and provides functions for sending and receiving any sort of data (generally the transferred data is called a message, although in this context it may be inappropriate to call it so). The module doesn't use any messaging protocol and relies solely on Events to transfer messages, making it fast and easy to use for in-program events. Publishing data does not return, thus making all return values void.

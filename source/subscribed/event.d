@@ -51,6 +51,20 @@ class Event(ReturnType, ArgTypes...): IEvent
         }
     }
 
+    delegateType shift()
+    {
+        auto front = delegates.front;
+        delegates.removeFront;
+        return front;
+    }
+
+    delegateType pop()
+    {
+        auto back = delegates.back;
+        delegates.removeBack;
+        return back;
+    }
+
     void opOpAssign(string s)(delegateType del) if (s == "~")
     {
         delegates ~= del;
@@ -72,6 +86,9 @@ alias VoidEvent = Event!void;
 
 unittest
 {
+    import core.exception;
+    import std.exception: Exception, assertThrown;
+
     bool value;
 
     void changeValue()
@@ -98,6 +115,9 @@ unittest
     assert(event.subscribers.length == 2);
     assert(event -= &multiply);
     assert(event.subscribers.length == 1);
+    event.shift;
+    assert(event.subscribers.length == 0);
+    assertThrown!AssertError(event.shift);
 
     auto voidEvent = new VoidEvent;
     voidEvent ~= &changeValue;

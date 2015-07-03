@@ -1,7 +1,6 @@
 module subscribed.pubsub;
 import core.thread: Fiber, Thread, dur;
 import subscribed.event;
-import std.exception: Exception, assertThrown;
 import std.typecons: Tuple;
 import std.string: format;
 
@@ -83,6 +82,7 @@ void destroyChannel(string channel)
 
 unittest
 {
+    import std.exception: Exception, assertThrown;
     bool value;
 
     void changeValue()
