@@ -1,127 +1,155 @@
 module subscribed.event;
 import std.container: DList;
 import std.algorithm: find;
+import std.traits: isCallable, isDelegate, ReturnType, ParameterTypeTuple;
 import std.array: array;
 
-package interface IEvent
+struct Event(Type) if (isCallable!Type)
 {
-    @property void* ptr();
-    @property string argTypes();
-}
-
-class Event(ReturnType, ArgTypes...): IEvent
-{
-    alias delegateType = ReturnType delegate(ArgTypes);
-    private DList!(delegateType) delegates;
-
-    @property void* ptr()
+    private
     {
-        return cast(void*)this;
+        DList!(Type) listeners;
+        int _size;
     }
 
-    @property string argTypes()
+    alias type = Type;
+    alias returnType = ReturnType!Type;
+    alias parameterTypes = ParameterTypeTuple!Type;
+
+    @property size()
     {
-        return ArgTypes.stringof;
+        return _size;
     }
 
     @property subscribers()
     {
-        return array(delegates[]);
+        return array(listeners[]);
     }
 
-    static if (is(ReturnType == void))
+    @property empty()
     {
-        void opCall(ArgTypes args)
+        return listeners.empty;
+    }
+
+    bool clear()
+    {
+        auto result = !empty;
+        listeners.clear;
+        return result;
+    }
+
+    static if (is(returnType == void))
+    {
+        auto opCall(parameterTypes args)
         {
-            foreach (del; delegates)
+            foreach (del; listeners)
                 del(args);
         }
     }
 
     else
     {
-        ReturnType[] opCall(ArgTypes args)
+        auto opCall(parameterTypes args)
         {
-            ReturnType[] result;
+            returnType[] result;
 
-            foreach (del; delegates)
+            foreach (del; listeners)
                 result ~= del(args);
 
             return result;
         }
     }
 
-    delegateType shift()
+    Type shift()
     {
-        auto front = delegates.front;
-        delegates.removeFront;
+        if (listeners.empty)
+            return null;
+
+        auto front = listeners.front;
+        listeners.removeFront;
         return front;
     }
 
-    delegateType pop()
+    Type pop()
     {
-        auto back = delegates.back;
-        delegates.removeBack;
+        if (listeners.empty)
+            return null;
+
+        auto back = listeners.back;
+        listeners.removeBack;
         return back;
     }
 
-    void opOpAssign(string s)(delegateType del) if (s == "~")
+    void opOpAssign(string s)(Type del) if (s == "~")
     {
-        delegates ~= del;
+        _size++;
+        listeners ~= del;
     }
 
-    bool opOpAssign(string s)(delegateType del) if (s == "-")
+    bool opOpAssign(string s)(Type del) if (s == "-")
     {
-        auto matches = find!(f => f == del)(delegates[]);
+        auto matches = find!(f => f == del)(listeners[]);
 
         if (matches.empty)
             return false;
 
-        delegates.remove(matches);
+        _size -= array(matches).length;
+        listeners.remove(matches);
         return true;
     }
 }
 
-alias VoidEvent = Event!void;
+alias VoidEvent = Event!(void function());
 
-unittest
+package version (unittest)
 {
     import core.exception;
     import std.exception: Exception, assertThrown;
 
-    bool value;
+    bool flag;
 
-    void changeValue()
+    void changeFlag()
     {
-        value ^= 1;
+        flag ^= 1;
     }
 
-    int add(int a, int b)
+    void tests()
     {
-        return a + b;
+        int add(int a, int b)
+        {
+            return a + b;
+        }
+
+        int multiply(int a, int b)
+        {
+            return a * b;
+        }
+
+        Event!(int delegate(int, int)) event;
+        assert(event(5, 5) == []);
+        event ~= &add;
+        assert(event(5, 5) == [10]);
+        event ~= &multiply;
+        assert(event(5, 5) == [10, 25]);
+        assert(event.size == 2);
+        assert(event -= &multiply);
+        assert(event.size == 1);
+        event.shift;
+        assert(event.subscribers == []);
+        assert(event.shift == null);
+
+        VoidEvent voidEvent;
+        voidEvent ~= &changeFlag;
+        assert(!flag);
+        voidEvent();
+        assert(flag);
+        assert(voidEvent.clear);
+        assert(voidEvent.empty);
+        assert(!voidEvent.clear);
     }
+}
 
-    int multiply(int a, int b)
-    {
-        return a * b;
-    }
-
-    auto event = new Event!(int, int, int);
-    assert(event(5, 5) == []);
-    event ~= &add;
-    assert(event(5, 5) == [10]);
-    event ~= &multiply;
-    assert(event(5, 5) == [10, 25]);
-    assert(event.subscribers.length == 2);
-    assert(event -= &multiply);
-    assert(event.subscribers.length == 1);
-    event.shift;
-    assert(event.subscribers.length == 0);
-    assertThrown!AssertError(event.shift);
-
-    auto voidEvent = new VoidEvent;
-    voidEvent ~= &changeValue;
-    assert(!value);
-    voidEvent();
-    assert(value);
+unittest
+{
+    tests;
 }

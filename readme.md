@@ -4,7 +4,7 @@ This is a simple library for minimalistic in-process pub-sub and event operation
 
 There are two modules in the package (both can be imported using `import subscribed`:
 
-* `subscribed.event` provides a class for creating events, which are basically collections of delegates ("subscribers") that have the same signature. Events are called like functions (`opCall`) and return arrays, corresponding to the return values of individual functions:
+* `subscribed.event` provides a struct for creating events, which are basically collections of callables (functions or delegates) ("subscribers") that have the same signature. Events are called like functions (via `opCall`) and return arrays, corresponding to the return values of individual functions:
 ```
 import subscribed.event;
 
@@ -20,49 +20,67 @@ int multiply(int a, int b)
 
 void doNothing() {}
 
-// The first argument of the constructor specifies the return type, the rest specify the types of arguments this event should expect from it's delegates
+// The argument of the Event template is the callable
 
-auto event = new Event!(int, int, int);
+Event!(int delegate(int, int)) event;
 event ~= &add;
 event ~= &multiply;
 assert(event(5, 5) == [10, 25]);
-event.destroy
 
-// For convenience, VoidEvent aliases Event!void (events, accepting void delegates without parameters). Obviously, these events do not return.
+// For convenience, VoidEvent aliases Event!(void function()) (events, accepting void functions without parameters). Obviously, these events do not return.
 
-event = new VoidEvent;
+VoidEvent event;
 event ~= doNothing;
 event ~= doNothing;
 event();
 
-// You can add the same delegate multiple times. When removing it however, all mathing delegates get removed.
+// You can add the same callable multiple times. When removing it however, all mathing callables get removed.
 
-event -= doNothing; // Returns true, meaning that there were >=1 removed delegates
-event -= doNothing; // Returns false, meaning that there were no removed delegates
-assert(event.subscribers.length == 0); // No subscribers left
+event -= doNothing; // Returns true, meaning that there were >=1 removed callables
+event -= doNothing; // Returns false, meaning that there were no removed callables
+assert(event.size == 0); // No subscribers left
+assert(event.subscribers == []);
 
 event ~= doNothing;
 
-// You can off course shift and pop delegates
-event.shift; // Doesn't throw
-assertThrown!AssertError(event.shift); // Throws and AssertError, because there is nothing to return
+// You can off course shift and pop callables
+event.shift; // Returns doNothing
+assert(event.pop == null); // Returns null, because no callables are available
+
+event ~= doNothing;
+
+// In case you want to remove all subscribers:
+assert(!event.empty) // The event has one subscriber
+assert(event.clear) // Returns true, meaning that there were removed subscribers
 ```
 
-* `subscribed.pubsub` is based on events and provides functions for sending and receiving any sort of data (generally the transferred data is called a message, although in this context it may be inappropriate to call it so). The module doesn't use any messaging protocol and relies solely on Events to transfer messages, making it fast and easy to use for in-program events. Publishing data does not return, thus making all return values void.
+* `subscribed.pubsub` is based on events and provides functions for sending and receiving any sort of data (generally the transferred data is called a message, although in this context it may be inappropriate to call it so). The module doesn't use any messaging protocol and relies solely on Events to transfer messages, making it fast and easy to use for in-program events. 
 
 ```
-void f(int a) {}
-void g(int a, int b) {}
-void h(string a) {}
+// To create a channel, simply choose a name and use the template mixin:
 
-subscribe("test", &f); // From now on, all delegates, subscribing to the "test" channel should have the same type as f: void function(int)
+mixin PubSubChannel!"change";
 
-publish("test", 1); // Transfers 1 to all subscribed delegates, currently only f. Publishing to an event without subscribers simply does nothing, regardless of the "message".
+// Now in whatever scope you have created the channel, you should be able to subscribe and publish. The global scope is used in this case. The second argument to the mixin is the type of the callable, by default 'void function()'
 
-publish("test", 1, 2)); // Throws an ChannelTypeException, because the data transmitted does not match what the underlying event expects
+int f(int i)
+{
+    return i;
+}
 
-unsubscribe("test", &f); // Returns true, meaning that there were >=1 removed delegates
-unsubscribe("test", &f); // Returns false, meaning that there were no removed delegates
+subscribe!"test"(&f); // You can only subscribe delegates to the "test" channel, because it is the only one created. This code will not compile, because f is of the wrong type
 
-destroyChannel("test"); // Destroys the underlying event, making it possible to subscribe delegates with a different signature
+mixin PubSubChannel!("int", int function(int));
+
+subscribe!"int"(&f);
+
+publish!"int"(1); // Returns [1]
+
+unsubscribe!"int"(&f); // Returns true, meaning that there were removed callables
+unsubscribe!"test"(&f); // Returns false, meaning that there were no removed callables
 ```
+
+## TODO:
+
+* Write a proper documentation
+* Find a way to provide an express.js-like routing to channel names

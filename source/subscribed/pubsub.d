@@ -1,118 +1,71 @@
 module subscribed.pubsub;
-import core.thread: Fiber, Thread, dur;
 import subscribed.event;
-import std.typecons: Tuple;
-import std.string: format;
 
-private
+mixin template PubSubChannel(string name, callableType = void function()) if (isCallable!callableType)
 {
-    IEvent[string] channels;
-    enum string errorMessage = "Channel %s uses delegates with arguments %s, not %s";
-}
+    private Event!callableType event;
 
-class ChannelTypeException: Exception
-{
-    this(string channel, string argTypes, string channelType)
+    void subscribe(string channel: name)(callableType callable)
     {
-        super(errorMessage.format(channel, argTypes, channelType));
+        event ~= callable;
+    }
+
+    auto publish(string channel: name)(event.parameterTypes args)
+    {
+        static if (is(event.returnType == void))
+            event(args);
+        else
+            return event(args);
+    }
+
+    bool unsubscribe(string channel: name)(callableType callable)
+    {
+        return event -= callable;
     }
 }
 
-void publish(T...)(string channel, T params)
+package version (unittest)
 {
-    alias EventType = Event!(void, T);
-    EventType event;
+    bool flag;
 
-    if (channel !in channels)
-        return;
-
-    event = cast(EventType)channels[channel].ptr;
-
-    if (event.argTypes != T.stringof)
-        throw new ChannelTypeException(channel, T.stringof, event.argTypes);
-
-    event(params);
-}
-
-void subscribe(T...)(string channel, void delegate(T) del)
-{
-    auto argTypes = T.stringof;
-    alias EventType = Event!(void, T);
-    EventType event;
-
-    if (channel !in channels)
+    void changeFlag()
     {
-        event = new EventType;
-        event ~= del;
-        channels[channel] = event;
-        return;
+        flag ^= 1;
     }
 
-    event = cast(EventType)channels[channel].ptr;
+    int f(int i)
+    {
+        return i;
+    }
 
-    if (event.argTypes != argTypes)
-        throw new ChannelTypeException(channel, argTypes, event.argTypes);
+    mixin PubSubChannel!("test", int function(int));
 
-    event ~= del;
-}
+    void tests()
+    {
+        subscribe!"test"(&f);
+        assert(publish!"test"(1) == [1]);
+        assert(unsubscribe!"test"(&f));
+        assert(!unsubscribe!"test"(&f));
 
-bool unsubscribe(T...)(string channel, void delegate(T) del)
-{
-    alias EventType = Event!(void, T);
-    EventType event;
+        mixin PubSubChannel!"change";
 
-    if (channel !in channels)
-        return false;
+        subscribe!"change"(&changeFlag);
+        publish!"change";
+        assert(flag);
+        publish!"change";
+        assert(!flag);
 
-    event = cast(EventType)channels[channel].ptr;
+        subscribe!"change"(&changeFlag);
+        publish!"change";
+        assert(!flag);
 
-    if (event.argTypes != T.stringof)
-        throw new ChannelTypeException(channel, T.stringof, event.argTypes);
-
-    return event -= del;
-}
-
-void destroyChannel(string channel)
-{
-    if (channel in channels) {
-        channels[channel].destroy;
-        channels.remove(channel);
+        assert(unsubscribe!"change"(&changeFlag));
+        publish!"change";
+        assert(!flag);
     }
 }
 
 unittest
 {
-    import std.exception: Exception, assertThrown;
-    bool value;
-
-    void changeValue()
-    {
-        value ^= 1;
-    }
-
-    void f(int a) {}
-    void g(int a, int b) {}
-    void h(string a) {}
-
-    subscribe("test", &f);
-    assertThrown!ChannelTypeException(subscribe("test", &g));
-    assertThrown!ChannelTypeException(subscribe("test", &h));
-    publish("test", 1);
-    assertThrown!ChannelTypeException(publish("test", 1, 2));
-    assert(unsubscribe("test", &f));
-    assert(!unsubscribe("test", &f));
-
-    subscribe("change", &changeValue);
-    publish("change");
-    assert(value);
-    publish("change");
-    assert(!value);
-
-    subscribe("change", &changeValue);
-    publish("change");
-    assert(!value);
-
-    destroyChannel("change");
-    publish("change");
-    assert(!value);
+    tests;
 }
