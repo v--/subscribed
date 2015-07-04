@@ -34,6 +34,7 @@ struct Event(Type) if (isCallable!Type)
     bool clear()
     {
         auto result = !empty;
+        _size = 0;
         listeners.clear;
         return result;
     }
@@ -65,6 +66,7 @@ struct Event(Type) if (isCallable!Type)
         if (listeners.empty)
             return null;
 
+        _size -= 1;
         auto front = listeners.front;
         listeners.removeFront;
         return front;
@@ -75,6 +77,7 @@ struct Event(Type) if (isCallable!Type)
         if (listeners.empty)
             return null;
 
+        _size -= 1;
         auto back = listeners.back;
         listeners.removeBack;
         return back;
