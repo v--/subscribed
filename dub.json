@@ -1,8 +1,8 @@
 {
     "name": "subscribed",
-    "description": "A minimalistic event and pub-sub library",
+    "description": "A minimalistic event and eventmachine library",
     "copyright": "Copyright © 2015, Ianis G. Vasilev",
-    "authors": ["ianis"],
-    "license": "Boost",
+    "authors": ["ivasilev"],
+    "license": "BSL-1.0",
     "targetType": "library"
 }
