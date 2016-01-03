@@ -1,9 +1,0 @@
-{
-    "name": "subscribed",
-    "version": "1.2.0",
-    "description": "A minimalistic event and event machine library",
-    "copyright": "Copyright © 2015-2016, Ianis G. Vasilev",
-    "authors": ["ivasilev"],
-    "license": "BSL-1.0",
-    "targetType": "library"
-}

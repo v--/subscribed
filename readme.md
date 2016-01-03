@@ -4,6 +4,10 @@ A minimalistic event and event machine library.
 
 There are two modules in the package (both are publicly imported using `import subscribed`:
 
+## Documentation
+
+A ddox-generated documentation with example usage can be found [here](http://ivasilev.net/docs/subscribed/index.html).
+
 ## modules
 
 ### `subscribed.event`
@@ -21,10 +25,6 @@ A structure representing a complete finite automaton with a singleton alphabet -
 #### Use case
 
 The module is intended for simplifying development of persistently running applications. Most components of a long-running program have multiple possible states and implementing switching between states without some publish-subscribe mechanism generally does not scale well. Consider the case bellow:
-
-## Documentation
-
-A ddox-generated documentation with example usage can be found [here](http://ivasilev.net/docs/subscribed/index.html).
 
 ## Simple example
 
