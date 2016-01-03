@@ -1,36 +1,45 @@
 /**
  * An event structure representing a one-to-many function/delegate relationship.
- * Authors: Ianis G. Vasilev `<mail@ivasilev.net>`, a.k.a. ivasilev / ianis / v--
- * Copyright: Copyright © 2015, Ianis G. Vasilev
+ * Authors: Ianis G. Vasilev `<mail@ivasilev.net>`
+ * Copyright: Copyright © 2015-2016, Ianis G. Vasilev
  * License: BSL-1.0
  */
 module subscribed.event;
 
 import std.container: DList;
 import std.algorithm: find;
-import std.traits: isCallable, isDelegate, ReturnType, ParameterTypeTuple;
+import std.traits: isCallable, isDelegate, ReturnTypeTpl = ReturnType, ParameterTypeTuple;
 import std.array: array;
 
 /**
  * An event structure representing a one-to-many function/delegate relationship.
  * It mimics a function by overriding the call operator.
  *
+ * An Event.ReturnType alias is generated on template instantiation but cannot generate proper documentation.
+ *
  * Params:
- *  Type = the listener type this event contains.
+ *  Type = The listener type this event contains. Default is `void function()`.
  *
  * Returns:
  *  An array of results of the calls of the correspoding listeners.
  */
 struct Event(Type = void function()) if (isCallable!Type)
 {
+    /// The listeners' type.
+    alias ListenerType = Type;
+    /// The event's return type.
+    static if (is(ReturnTypeTpl!Type == void))
+        alias ReturnType = void;
+    else
+        alias ReturnType = ReturnTypeTpl!Type[];
+    /// The event's argument type tuple.
+    alias ParamTypes = ParameterTypeTuple!Type;
+
     private
     {
         DList!(Type) _listeners;
         int _size;
     }
-
-    /// The listeners' type.
-    alias ListenerType = Type;
 
     /// The number of listeners.
     @property size()
@@ -74,20 +83,20 @@ struct Event(Type = void function()) if (isCallable!Type)
      *  An array of results from the listeners.
      *  If $(DDOC_PSYMBOL ReturnType) is void, then this function also returns void.
      */
-    auto opCall(ParameterTypeTuple!Type args)
+    ReturnType opCall(ParamTypes args)
     {
-        static if (is(ReturnType!Type == void))
+        static if (is(ReturnType == void))
         {
-            foreach (del; _listeners)
-                del(args);
+            foreach (listener; _listeners)
+                listener(args);
         }
 
         else
         {
-            ReturnType!Type[] result;
+            ReturnType result;
 
-            foreach (del; _listeners)
-                result ~= del(args);
+            foreach (listener; _listeners)
+                result ~= listener(args);
 
             return result;
         }
@@ -197,6 +206,8 @@ struct Event(Type = void function()) if (isCallable!Type)
 ///
 unittest
 {
+    // Since this example is generated from unit tests, delegates are required instead of functions
+
     int add(int a, int b)
     {
         return a + b;
@@ -215,11 +226,7 @@ unittest
     event ~= &multiply;
     assert(event(5, 5) == [10, 25]);
 
-    // For convenience, Event's default type parameter is a signature for void functions without parameters.
-    version (unittest)
-        Event!(void delegate()) voidEvent;
-    else
-        Event voidEvent;
+    Event!(void delegate()) voidEvent;
 
     // You can add the same listener multiple times. When removing it however, all matching listeners get removed.
     voidEvent ~= &doNothing;
