@@ -42,7 +42,6 @@ struct EventMachine(string[] States, Type = void function())
     /// The events' type.
     alias EventType = Event!Type;
 
-    /// The state enum.
     mixin("enum State : size_t { Initial, %s }".format(States.join(",")));
 
     private
@@ -59,7 +58,6 @@ struct EventMachine(string[] States, Type = void function())
 
     mixin(States.map!((string state) {
         return q{
-            /// asdf
             size_t subscribe(State state: State.%1$s)(EventType.ListenerType listener)
             {
                 return _states[State.%1$s].append(listener);
