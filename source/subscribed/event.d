@@ -18,12 +18,12 @@ import std.array: array;
  * An Event.ReturnType alias is generated on template instantiation but cannot generate proper documentation.
  *
  * Params:
- *  Type = The listener type this event contains. Default is `void function()`.
+ *  Type = The listener type this event contains.
  *
  * Returns:
  *  An array of results of the calls of the correspoding listeners.
  */
-struct Event(Type = void function()) if (isCallable!Type)
+struct Event(Type) if (isCallable!Type)
 {
     /// The listeners' type.
     alias ListenerType = Type;
@@ -204,6 +204,9 @@ struct Event(Type = void function()) if (isCallable!Type)
 }
 
 ///
+alias VoidEvent = Event!(void delegate());
+
+///
 unittest
 {
     // Since this example is generated from unit tests, delegates are required instead of functions
@@ -226,7 +229,7 @@ unittest
     event ~= &multiply;
     assert(event(5, 5) == [10, 25]);
 
-    Event!(void delegate()) voidEvent;
+    VoidEvent voidEvent;
 
     // You can add the same listener multiple times. When removing it however, all matching listeners get removed.
     voidEvent ~= &doNothing;

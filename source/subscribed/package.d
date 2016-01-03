@@ -5,4 +5,6 @@
  * License: BSL-1.0
  */
 module subscribed;
+
 public import subscribed.event;
+public import subscribed.event_machine;

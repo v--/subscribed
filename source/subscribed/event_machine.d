@@ -28,13 +28,13 @@ import subscribed.event;
  *   Can also be called using the alias goTo#{StateName}
  *
  * Params:
- *  States = An array of available state names. "Initial" is a reserved state and must not be used. By convention enum members are capitalized and so are state names.
  *  Type = The listener type this event contains. Default is `void function()`.
+ *  States = An array of available state names. "Initial" is a reserved state and must not be used. By convention enum members are capitalized and so are state names.
  *
  * Bugs:
  *  Because DMD v2.069 and derivatives do not provide a good way to check identifier validity without using a custom parser, the user is responsible for providing state strings that are valid identifiers.
  */
-struct EventMachine(string[] States, Type = void function())
+struct EventMachine(string[] States, Type = void delegate())
     if (States.length > 0 && States.all!((string state) {
             return state != "Initial" && state.indexOf(' ') == -1 && state.indexOf(',') == -1;
         }) && isCallable!Type)
