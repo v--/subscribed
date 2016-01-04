@@ -147,15 +147,19 @@ struct Event(Type) if (isCallable!Type)
      * Prepends a listener to the listener collection.
      *
      * Params:
-     *  listener = The listener to append.
+     *  listeners = The listeners to append.
      *
      * Returns:
      *  The new size of the event.
      */
-    size_t prepend(Type listener)
+    size_t prepend(Type[] listeners...)
     {
-        _size++;
-        _listeners.insertFront(listener);
+        foreach (listener; listeners)
+        {
+            _size++;
+            _listeners.insertFront(listener);
+        }
+
         return _size;
     }
 
@@ -163,15 +167,19 @@ struct Event(Type) if (isCallable!Type)
      * Appends a listener to the listener collection.
      *
      * Params:
-     *  listener = The listener to append.
+     *  listeners = The listeners to append.
      *
      * Returns:
      *  The new size of the event.
      */
-    size_t append(Type listener)
+    size_t append(Type[] listeners...)
     {
-        _size++;
-        _listeners.insertBack(listener);
+        foreach (listener; listeners)
+        {
+            _size++;
+            _listeners.insertBack(listener);
+        }
+
         return _size;
     }
 
@@ -232,8 +240,7 @@ unittest
 
     // The argument of the Event template is the listener signature.
     Event!(int delegate(int, int)) event;
-    event ~= &add;
-    event ~= &multiply;
+    event.append(&add, &multiply);
     assert(event(5, 5) == [10, 25]);
 
     VoidEvent voidEvent;

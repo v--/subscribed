@@ -27,7 +27,7 @@ import subscribed.event;
  */
 struct EventMachine(string[] States, Type = void delegate())
     if (States.length > 0 && States.all!((string state) {
-            return state != "Initial" && state.indexOf(' ') == -1 && state.indexOf(',') == -1;
+            return state != "Initial" && state.indexOf(' ') == -1 && state.indexOf(',') == -1 && state.indexOf('.') == -1;
         }) && isCallable!Type)
 {
     /// The events' type.
@@ -52,12 +52,12 @@ struct EventMachine(string[] States, Type = void delegate())
     }
 
     /**
-     * A function for appending a listener to the state event.
+     * A function for appending listeners to the state event.
      * Can also be called using the alias subscribeTo#{StateName}.
      *
      * Params:
      *  state = The state whose event to subscribe to.
-     *  listener = The listener to append.
+     *  listeners = The listeners to append.
      *
      * Returns:
      *  The new size of the event.
@@ -65,9 +65,9 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    size_t subscribe(State state, EventType.ListenerType listener)
+    size_t subscribe(State state, EventType.ListenerType[] listeners...)
     {
-        return _states[state].append(listener);
+        return _states[state].append(listeners);
     }
 
     /**
@@ -99,9 +99,9 @@ struct EventMachine(string[] States, Type = void delegate())
 
     version (D_Ddoc) {} else mixin(States.map!((string state) {
         return q{
-            size_t subscribeTo%1$s(EventType.ListenerType listener)
+            size_t subscribeTo%1$s(EventType.ListenerType[] listeners...)
             {
-                return subscribe(State.%1$s, listener);
+                return subscribe(State.%1$s, listeners);
             }
 
             EventType.ReturnType goTo%1$s(EventType.ParamTypes params)
