@@ -20,7 +20,7 @@ The module provides C#-like events for managing proper change propagation betwee
 
 ### `subscribed.event_machine`
 
-A structure representing a complete finite automaton with a singleton alphabet - any state can be reached from any other state at any time. Each state has an event that is triggered upon transitioning to it.
+A structure representing a complete finite automaton with a singleton alphabet - any state (except for the initial one) can be reached from any other state at any time. Each state has an event that is triggered upon transitioning to it.
 
 #### Use case
 
@@ -45,7 +45,7 @@ void exit()
 }
 
 EventMachine!(["Play", "Stop"], void function()) player;
-player.subscribe!(player.State.Play)(&playMusic);
+player.subscribe(player.State.Play, &playMusic);
 player.subscribeToPlay(&showLyrics);
 player.subscribeToStop(&exit);
 

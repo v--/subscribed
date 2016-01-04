@@ -15,8 +15,6 @@ import std.array: array;
  * An event structure representing a one-to-many function/delegate relationship.
  * It mimics a function by overriding the call operator.
  *
- * An Event.ReturnType alias is generated on template instantiation but cannot generate proper documentation.
- *
  * Params:
  *  Type = The listener type this event contains.
  *
@@ -27,11 +25,20 @@ struct Event(Type) if (isCallable!Type)
 {
     /// The listeners' type.
     alias ListenerType = Type;
-    /// The event's return type.
-    static if (is(ReturnTypeTpl!Type == void))
+
+    version (D_Ddoc)
+    {
+        /// The event's return type.
         alias ReturnType = void;
+    }
     else
-        alias ReturnType = ReturnTypeTpl!Type[];
+    {
+        static if (is(ReturnTypeTpl!Type == void))
+            alias ReturnType = void;
+        else
+            alias ReturnType = ReturnTypeTpl!Type[];
+    }
+
     /// The event's argument type tuple.
     alias ParamTypes = ParameterTypeTuple!Type;
 
@@ -77,18 +84,18 @@ struct Event(Type) if (isCallable!Type)
      * Calls all the registered listeners in order.
      *
      * Params:
-     *  args = the arguments tuple to call the listener with.
+     *  params = the param tuple to call the listener with.
      *
      * Returns:
      *  An array of results from the listeners.
      *  If $(DDOC_PSYMBOL ReturnType) is void, then this function also returns void.
      */
-    ReturnType opCall(ParamTypes args)
+    ReturnType opCall(ParamTypes params)
     {
         static if (is(ReturnType == void))
         {
             foreach (listener; _listeners)
-                listener(args);
+                listener(params);
         }
 
         else
@@ -96,7 +103,7 @@ struct Event(Type) if (isCallable!Type)
             ReturnType result;
 
             foreach (listener; _listeners)
-                result ~= listener(args);
+                result ~= listener(params);
 
             return result;
         }

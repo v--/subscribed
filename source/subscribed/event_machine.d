@@ -14,18 +14,9 @@ import subscribed.event;
 
 /**
  * A state machine with simplified transitions - a wrapper around a state collection.
- * The machine has an initial state and a set of alternative states.
+ * The machine has an initial state and a set of alternative states (loops are permited).
+ * Any state can transition to any other state (the initial state is unreachable after transitioning away from it).
  * Transitioning between them is implemented by calling a state-specific event.
- *
- * On template instantiation additional members are generated:
- *
- * * enum State : size_t: An enum generated from $(DDOC_PSYMBOL States) with an additional "Initial" state.
- *
- * * size_t subscribe(State state)(EventType.ListenerType listener): A function for appending a listener to the state event.
- *   Can also be called using the alias subscribeTo#{StateName}
- *
- * * EventType.ReturnType go(State state)(EventType.ParamTypes params): A function for changing the current state.
- *   Can also be called using the alias goTo#{StateName}
  *
  * Params:
  *  Type = The listener type this event contains. Default is `void function()`.
@@ -42,7 +33,11 @@ struct EventMachine(string[] States, Type = void delegate())
     /// The events' type.
     alias EventType = Event!Type;
 
-    mixin("enum State : size_t { Initial, %s }".format(States.join(",")));
+    version (D_Ddoc)
+        /// An enum generated from ["Initial"], concatenated with the $(DDOC_PSYMBOL States) array.
+        enum State : size_t { Initial }
+    else
+        mixin("enum State : size_t { Initial, %s }".format(States.join(",")));
 
     private
     {
@@ -56,22 +51,63 @@ struct EventMachine(string[] States, Type = void delegate())
         return _state;
     }
 
-    mixin(States.map!((string state) {
+    /**
+     * A function for appending a listener to the state event.
+     * Can also be called using the alias subscribeTo#{StateName}.
+     *
+     * Params:
+     *  state = The state whose event to subscribe to.
+     *  listener = The listener to append.
+     *
+     * Returns:
+     *  The new size of the event.
+     *
+     * See_Also:
+     *  subscribed.event.Event.append
+     */
+    size_t subscribe(State state, EventType.ListenerType listener)
+    {
+        return _states[state].append(listener);
+    }
+
+    /**
+     * A function for appending a listener to the state event.
+     * Can also be called using the alias goTo#{StateName}.
+     *
+     * Calls all the registered listeners in order.
+     *
+     * Params:
+     *  state = The state to transition to.
+     *  params = the param tuple to call the listener with.
+     *
+     * Returns:
+     *  An array of results from the listeners.
+     *  If $(DDOC_PSYMBOL EventType.ReturnType) is void, then this function also returns void.
+     *
+     * See_Also:
+     *  subscribed.event.Event.opCall
+     */
+    EventType.ReturnType go(State state, EventType.ParamTypes params)
+    {
+        scope (success) _state = state;
+
+        static if (is(EventType.ReturnType == void))
+            _states[state].opCall(params);
+        else
+            return _states[state].opCall(params);
+    }
+
+    version (D_Ddoc) {} else mixin(States.map!((string state) {
         return q{
-            size_t subscribe(State state: State.%1$s)(EventType.ListenerType listener)
+            size_t subscribeTo%1$s(EventType.ListenerType listener)
             {
-                return _states[State.%1$s].append(listener);
+                return subscribe(State.%1$s, listener);
             }
 
-            alias subscribeTo%1$s = subscribe!(State.%1$s);
-
-            EventType.ReturnType go(State state: State.%1$s)(EventType.ParamTypes params)
+            EventType.ReturnType goTo%1$s(EventType.ParamTypes params)
             {
-                scope(success) _state = State.%1$s;
-                %2$s _states[State.%1$s](params);
+                %2$s go(State.%1$s, params);
             }
-
-            alias goTo%1$s = go!(State.%1$s);
         }.format(state, is(EventType.ReturnType == void) ? "" : "return");
     }).join());
 }
@@ -88,6 +124,13 @@ unittest
 
     EventMachine!(["StateA", "StateB"], int delegate(int, int)) machine;
     assert(machine.state == machine.State.Initial);
-    machine.subscribe!(machine.State.StateA)(&add);
+    machine.subscribe(machine.State.StateA, &add);
     assert(machine.goToStateA(1, 2) == [3]);
+    assert(machine.state == machine.State.StateA);
+    machine.go(machine.state, 2, 3); // Ensure loops are possible.
+}
+
+version (D_Ddoc)
+{
+    EventMachine!(["StateA", "StateB"]) machine;
 }
