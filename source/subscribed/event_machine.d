@@ -14,9 +14,9 @@ import subscribed.event;
 
 /**
  * A state machine with simplified transitions - a wrapper around a state collection.
- * The machine has an initial state and a set of alternative states (loops are permited).
+ * The machine has an initial state and a set of alternative states (loops are permitted).
  * Any state can transition to any other state (the initial state is unreachable after transitioning away from it).
- * Transitioning between them is implemented by calling a state-specific event.
+ * Transitioning between states is implemented using state-specific event and can be canceled throwing from the event itself or the beforeEach and afterEach hooks.
  *
  * Params:
  *  Type = The listener type this event contains. Default is `void function()`.
@@ -30,18 +30,22 @@ struct EventMachine(string[] States, Type = void delegate())
             return state != "Initial" && state.indexOf(' ') == -1 && state.indexOf(',') == -1 && state.indexOf('.') == -1;
         }) && isCallable!Type)
 {
+    version (D_Ddoc)
+        /// An enum generated from ["Initial"], concatenated with the $(DDOC_PSYMBOL States) array.
+        enum State: size_t { Initial }
+    else
+        mixin("enum State: size_t { Initial, %s }".format(States.join(",")));
+
     /// The events' type.
     alias EventType = Event!Type;
 
-    version (D_Ddoc)
-        /// An enum generated from ["Initial"], concatenated with the $(DDOC_PSYMBOL States) array.
-        enum State : size_t { Initial }
-    else
-        mixin("enum State : size_t { Initial, %s }".format(States.join(",")));
+    /// The type of delegates for beforeEach and afterEach.
+    alias TransitionType = void delegate(State, State);
 
     private
     {
         State _state = State.Initial;
+        Event!TransitionType _before, _after;
         mixin("EventType[%d] _states;".format(States.length + 1));
     }
 
@@ -71,6 +75,42 @@ struct EventMachine(string[] States, Type = void delegate())
     }
 
     /**
+     * A function for appending listeners to the beforeEach event.
+     * These functions will be called before any transition with the old and new states as arguments.
+     *
+     * Params:
+     *  listeners = The listeners to append.
+     *
+     * Returns:
+     *  The new size of the event.
+     *
+     * See_Also:
+     *  subscribed.event.Event.append
+     */
+    size_t beforeEach(TransitionType[] listeners...)
+    {
+        return _before.append(listeners);
+    }
+
+    /**
+     * A function for appending listeners to the afterEach event.
+     * These functions will be called after any transition with the old and new states as arguments.
+     *
+     * Params:
+     *  listeners = The listeners to append.
+     *
+     * Returns:
+     *  The new size of the event.
+     *
+     * See_Also:
+     *  subscribed.event.Event.append
+     */
+    size_t afterEach(TransitionType[] listeners...)
+    {
+        return _after.append(listeners);
+    }
+
+    /**
      * A function for appending a listener to the state event.
      * Can also be called using the alias goTo#{StateName}.
      *
@@ -89,7 +129,13 @@ struct EventMachine(string[] States, Type = void delegate())
      */
     EventType.ReturnType go(State state, EventType.ParamTypes params)
     {
-        scope (success) _state = state;
+        scope (success)
+        {
+            _after(_state, state);
+            _state = state;
+        }
+
+        _before(_state, state);
 
         static if (is(EventType.ReturnType == void))
             _states[state].opCall(params);
@@ -128,6 +174,22 @@ unittest
     assert(machine.goToStateA(1, 2) == [3]);
     assert(machine.state == machine.State.StateA);
     machine.go(machine.state, 2, 3); // Ensure loops are possible.
+
+    bool flag;
+
+    machine.subscribeToStateB((a, b) {
+        return flag = a == b;
+    });
+
+    machine.beforeEach((oldState, newState) {
+        assert(oldState == machine.State.StateA && !flag);
+    });
+
+    machine.afterEach((oldState, newState) {
+        assert(oldState == machine.State.StateA && flag);
+    });
+
+    machine.goToStateB(5, 5);
 }
 
 version (D_Ddoc)

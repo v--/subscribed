@@ -44,8 +44,10 @@ void exit()
     // Magic
 }
 
-EventMachine!(["Play", "Stop"], void function()) player;
-player.subscribe(player.State.Play, &playMusic);
+alias Player = EventMachine!(["Play", "Stop"], void function());
+
+Player player;
+player.subscribe(Player.State.Play, &playMusic);
 player.subscribeToPlay(&showLyrics);
 player.subscribeToStop(&exit);
 

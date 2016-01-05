@@ -187,17 +187,23 @@ struct Event(Type) if (isCallable!Type)
      * Removed all occurrences of a listener.
      *
      * Params:
-     *  listener = The listener to remove.
+     *  listeners = The listeners to remove.
      *
      * Returns:
      *  The number of removed listeners.
      */
-    size_t remove(Type listener)
+    size_t remove(Type[] listeners...)
     {
-        auto matches = find!(f => f == listener)(_listeners[]);
-        auto length = array(matches).length;
+        size_t length;
+
+        foreach (listener; listeners)
+        {
+            auto matches = find!(f => f == listener)(_listeners[]);
+            length += array(matches).length;
+            _listeners.remove(matches);
+        }
+
         _size -= length;
-        _listeners.remove(matches);
         return length;
     }
 
@@ -242,6 +248,7 @@ unittest
     Event!(int delegate(int, int)) event;
     event.append(&add, &multiply);
     assert(event(5, 5) == [10, 25]);
+    assert(event.remove(&add, &multiply) == 2);
 
     VoidEvent voidEvent;
 
