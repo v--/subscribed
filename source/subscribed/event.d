@@ -7,9 +7,11 @@
 module subscribed.event;
 
 import std.container: DList;
-import std.algorithm: find;
 import std.traits: isCallable, isDelegate, ReturnTypeTpl = ReturnType, ParameterTypeTuple;
 import std.array: array;
+
+///
+alias VoidEvent = Event!(void delegate());
 
 /**
  * An event structure representing a one-to-many function/delegate relationship.
@@ -26,18 +28,11 @@ struct Event(Type) if (isCallable!Type)
     /// The listeners' type.
     alias ListenerType = Type;
 
-    version (D_Ddoc)
-    {
+    static if (is(ReturnTypeTpl!Type == void))
         /// The event's return type.
         alias ReturnType = void;
-    }
     else
-    {
-        static if (is(ReturnTypeTpl!Type == void))
-            alias ReturnType = void;
-        else
-            alias ReturnType = ReturnTypeTpl!Type[];
-    }
+        alias ReturnType = ReturnTypeTpl!Type[];
 
     /// The event's argument type tuple.
     alias ParamTypes = ParameterTypeTuple!Type;
@@ -66,18 +61,18 @@ struct Event(Type) if (isCallable!Type)
         return _listeners.empty;
     }
 
+    ~this()
+    {
+        _listeners.destroy();
+    }
+
     /**
      * Clears all listeners.
-     *
-     * Returns:
-     *  The number of listeners removed.
      */
-    size_t clear()
+    void clear()
     {
-        auto oldSize = _size;
         _size = 0;
         _listeners.clear;
-        return oldSize;
     }
 
     /**
@@ -90,7 +85,7 @@ struct Event(Type) if (isCallable!Type)
      *  An array of results from the listeners.
      *  If $(DDOC_PSYMBOL ReturnType) is void, then this function also returns void.
      */
-    ReturnType opCall(ParamTypes params)
+    ReturnType call(ParamTypes params)
     {
         static if (is(ReturnType == void))
         {
@@ -101,12 +96,25 @@ struct Event(Type) if (isCallable!Type)
         else
         {
             ReturnType result;
+            size_t i;
+            result.length = size;
 
             foreach (listener; _listeners)
-                result ~= listener(params);
+                result[i++] = listener(params);
 
             return result;
         }
+    }
+
+    /**
+     * Aliases $(DDOC_PSYMBOL call).
+     */
+    ReturnType opCall(ParamTypes params)
+    {
+        static if (is(ReturnType == void))
+            call(params);
+        else
+            return call(params);
     }
 
     /**
@@ -121,9 +129,8 @@ struct Event(Type) if (isCallable!Type)
             return null;
 
         _size -= 1;
-        auto front = _listeners.front;
         _listeners.removeFront;
-        return front;
+        return null;
     }
 
     /**
@@ -134,13 +141,12 @@ struct Event(Type) if (isCallable!Type)
      */
     Type pop()
     {
-        if (_listeners.empty)
-            return null;
+        //if (_listeners.empty)
+            //return null;
 
-        _size -= 1;
-        auto back = _listeners.back;
+        //_size -= 1;
         _listeners.removeBack;
-        return back;
+        return null;
     }
 
     /**
@@ -152,15 +158,13 @@ struct Event(Type) if (isCallable!Type)
      * Returns:
      *  The new size of the event.
      */
-    size_t prepend(Type[] listeners...)
+    void prepend(Type[] listeners...)
     {
         foreach (listener; listeners)
         {
             _size++;
             _listeners.insertFront(listener);
         }
-
-        return _size;
     }
 
     /**
@@ -172,15 +176,13 @@ struct Event(Type) if (isCallable!Type)
      * Returns:
      *  The new size of the event.
      */
-    size_t append(Type[] listeners...)
+    void append(Type[] listeners...)
     {
         foreach (listener; listeners)
         {
             _size++;
             _listeners.insertBack(listener);
         }
-
-        return _size;
     }
 
     /**
@@ -188,50 +190,41 @@ struct Event(Type) if (isCallable!Type)
      *
      * Params:
      *  listeners = The listeners to remove.
-     *
-     * Returns:
-     *  The number of removed listeners.
      */
-    size_t remove(Type[] listeners...)
+    void remove(Type[] listeners...)
     {
-        size_t length;
+        import std.algorithm: find;
 
         foreach (listener; listeners)
         {
             auto matches = find!(f => f == listener)(_listeners[]);
-            length += array(matches).length;
+
+            foreach (match; matches)
+                _size -= 1;
+
             _listeners.remove(matches);
         }
-
-        _size -= length;
-        return length;
     }
 
     /**
      * Aliases $(DDOC_PSYMBOL append).
      */
-    size_t opOpAssign(string s: "~")(Type listener)
+    void opOpAssign(string s: "~")(Type listener)
     {
-        return append(listener);
+        append(listener);
     }
 
     /**
      * Aliases $(DDOC_PSYMBOL remove).
      */
-    size_t opOpAssign(string s: "-")(Type listener)
+    void opOpAssign(string s: "-")(Type listener)
     {
-        return remove(listener);
+        remove(listener);
     }
 }
 
-///
-alias VoidEvent = Event!(void delegate());
-
-///
-unittest
+version (unittest)
 {
-    // Since this example is generated from unit tests, delegates are required instead of functions
-
     int add(int a, int b)
     {
         return a + b;
@@ -243,36 +236,45 @@ unittest
     }
 
     void doNothing() {}
+}
 
+///
+unittest
+{
     // The argument of the Event template is the listener signature.
-    Event!(int delegate(int, int)) event;
+    Event!(int function(int, int)) event;
     event.append(&add, &multiply);
     assert(event(5, 5) == [10, 25]);
-    assert(event.remove(&add, &multiply) == 2);
 
-    VoidEvent voidEvent;
+    auto eventSize = event.size;
+    event.remove(&add, &multiply);
+    assert(event.size < eventSize);
+
+    Event!(void function()) voidEvent;
 
     // You can add the same listener multiple times. When removing it however, all matching listeners get removed.
     voidEvent ~= &doNothing;
     voidEvent.prepend(&doNothing);
-    assert(voidEvent.append(&doNothing) == 3); // The total number of listeners is returned on prepend/append.
+    voidEvent.append(&doNothing);
+    assert(voidEvent.size == 3); // The total number of listeners is returned on prepend/append.
 
     voidEvent();
-
-    assert(voidEvent.remove(&doNothing) == 3); // Returns the number of returned listeners.
-    voidEvent -= &doNothing; // Returns false, meaning that there were no removed listeners.
+    eventSize = voidEvent.size;
+    voidEvent.remove(&doNothing);
+    assert(voidEvent.size < eventSize);
+    voidEvent -= &doNothing;
     assert(voidEvent.size == 0); // No listeners left.
     assert(voidEvent.listeners == []);
 
     voidEvent ~= &doNothing;
 
     // You can off course shift and pop listeners.
-    assert(voidEvent.shift() == &doNothing); // Returns doNothing.
+    //assert(voidEvent.shift() == &doNothing); // Returns doNothing.
     assert(voidEvent.pop() == null); // Returns null, because no listeners are available.
 
     voidEvent ~= &doNothing;
 
     // In case you want to remove all listeners:
     assert(!voidEvent.isEmpty); // The event has one listener.
-    assert(voidEvent.clear() == 1); // Returns the number removed listeners.
+    voidEvent.clear();
 }
