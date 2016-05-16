@@ -1,5 +1,9 @@
 # subscribe.d
 
+[![Build Status](https://api.travis-ci.org/v--/subscribed.svg?branch=master)](https://api.travis-ci.org/v--/subscribed.svg?branch=master)
+
+---
+
 A minimalistic library providing eventing-related structures.
 
 There are three modules in the package (all are publicly imported using `import subscribed`:

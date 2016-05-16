@@ -1,0 +1,9 @@
+language: d
+
+d:
+  - dmd
+  - gdc
+  - ldc
+
+test:
+  dub test
