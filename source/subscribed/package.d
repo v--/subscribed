@@ -8,3 +8,4 @@ module subscribed;
 
 public import subscribed.event;
 public import subscribed.event_machine;
+public import subscribed.mediator;

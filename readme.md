@@ -2,7 +2,7 @@
 
 A minimalistic library providing eventing-related structures.
 
-There are three modules in the package (both are publicly imported using `import subscribed`:
+There are three modules in the package (all are publicly imported using `import subscribed`:
 
 ## Documentation
 
