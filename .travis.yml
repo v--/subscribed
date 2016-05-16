@@ -2,7 +2,7 @@ language: d
 
 d:
   - dmd
-  - gdc
+  - gdc-5.2.0
   - ldc
 
 test:
