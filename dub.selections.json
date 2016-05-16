@@ -1,4 +1,6 @@
 {
 	"fileVersion": 1,
-	"versions": {}
+	"versions": {
+		"experimental_allocator": "2.70.0-b1"
+	}
 }
