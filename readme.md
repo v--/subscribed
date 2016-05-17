@@ -6,21 +6,21 @@
 
 A minimalistic library providing eventing-related structures.
 
-There are three modules in the package (all are publicly imported using `import subscribed`:
+There are three modules in the package (all are publicly imported using `import subscribed;`).
 
 ## Documentation
 
 A ddox-generated documentation with example usage can be found [here](http://ivasilev.net/docs/subscribed/index.html).
 
-## modules
+## Modules
 
 ### `subscribed.event`
 
-An event structure representing a one-to-many function/delegate relationship. Events are basically collections of listeners (either functions, delegates or thread ids) that have the same signature. Events are called like functions (via `opCall`) and return arrays, corresponding to the return values of individual listeners. Another cool feature is synchronizing thread outputs in a parallel pipeline.
+An event structure representing a one-to-many function/delegate relationship. Events are basically collections of listeners (either functions, delegates or thread ids) that have the same signature. Events are called like functions (via `opCall`) and return arrays, corresponding to the return values of individual listeners.
 
 #### Use case
 
-The module provides C#-like events for managing proper change propagation between different components of a program.
+The module provides C#-like events for managing proper change propagation between different components of a program. Another cool usage is synchronizing thread outputs in a parallel pipeline.
 
 ### `subscribed.mediator`
 
