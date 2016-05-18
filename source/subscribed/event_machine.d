@@ -6,33 +6,32 @@
  */
 module subscribed.event_machine;
 
-import std.functional: toDelegate;
-import std.algorithm: all, map;
-import std.string: format, indexOfAny;
+import std.algorithm: all;
 import std.traits: isCallable;
-import std.range: join;
 
+import subscribed.support;
 import subscribed.event;
 
 /**
  * A state machine with simplified transitions - a wrapper around a state collection.
  * State-dependent transitions should be implemented using beforeEach/afterEach hooks.
- * A transition can be canceled by returning false from the any beforeEach listener.
+ * A transition can be canceled by returning false from the any beforeEach listeners.
  * The machine has an initial state and a set of alternative states (loops are permitted).
  * Any state can transition to any other state (the initial state is unreachable after transitioning away from it).
  *
  * Params:
  *  States = An array of available state names. "Initial" is a reserved state and must not be used. By convention enum members are capitalized and so are state names.
  *  Type = The listener type this event contains. Default is `void delegate()`.
- *
- * Bugs:
- *  Because DMD v2.069 and derivatives do not provide a good way to check identifier validity without using a custom parser, the user is responsible for providing state strings that are valid identifiers.
  */
 struct EventMachine(string[] States, Type = void delegate())
     if (isCallable!Type && States.length > 0 && States.all!((string state) {
-        return state != "Initial" && state.indexOfAny([' ', ',', '.']);
+        return isValidIdentifier(state) && state != "Initial";
     }))
 {
+    import std.algorithm: map;
+    import std.string: format;
+    import std.range: join;
+
     version (D_Ddoc)
         /// An enum generated from ["Initial"], concatenated with the $(DDOC_PSYMBOL States) array.
         enum State: size_t { Initial }
@@ -42,7 +41,7 @@ struct EventMachine(string[] States, Type = void delegate())
     /// The events' type.
     alias EventType = Event!Type;
 
-    /// The hook to be executed before any transition. If false is returned, the no transition occurs.
+    /// The hook to be executed before any transition. If false is returned, no transition occurs.
     Event!(bool delegate(State, State)) beforeEach;
 
     /// The hook to be executed after a successful transition.
@@ -71,7 +70,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    @safe void on(State state, EventType.ListenerType[] listeners...)
+    @safe void on(const State state, EventType.ListenerType[] listeners...)
     {
         _states[state].append(listeners);
     }
@@ -86,17 +85,18 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    @safe void off(State state, EventType.ListenerType[] listeners...)
+    @safe void off(const State state, EventType.ListenerType[] listeners...)
     {
         _states[state].remove(listeners);
     }
 
     /**
      * Calls all the registered listeners in order.
+     * Can also be called using the alias goTo#{StateName}.
      *
      * Params:
      *  state = The state to transition to.
-     *  params = the param tuple to call the listener with.
+     *  params = The param tuple to call the listener with.
      *
      * Returns:
      *  An array of results from the listeners.
@@ -105,7 +105,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.call
      */
-    EventType.ReturnType go(State state, EventType.ParamTypes params)
+    EventType.ReturnType go(const State state, EventType.ParamTypes params)
     {
         foreach (condition; beforeEach(_state, state))
         {
@@ -161,42 +161,47 @@ version (unittest)
 /// An event machine stores it's state.
 unittest
 {
-    EventMachine!(["StateA", "StateB"]) machine;
-    assert(machine.state == machine.State.Initial, "The machine is not initially in it's default state.");
+    alias Machine = EventMachine!(["StateA", "StateB"]);
+    Machine machine;
+
+    assert(machine.state == Machine.State.Initial, "The machine is not initially in it's default state.");
     machine.goToStateA();
-    assert(machine.state == machine.State.StateA, "The machine does not navigate to other states.");
+    assert(machine.state == Machine.State.StateA, "The machine does not navigate to other states.");
     machine.goToStateA();
-    assert(machine.state == machine.State.StateA, "The machine does not permit loops.");
+    assert(machine.state == Machine.State.StateA, "The machine does not permit loops.");
     machine.goToStateB();
-    assert(machine.state == machine.State.StateB, "The machine does not navigate to other states after exiting the initial one.");
+    assert(machine.state == Machine.State.StateB, "The machine does not navigate to other states after exiting the initial one.");
 }
 
 /// Switching states calls the corresponding events.
 unittest
 {
+    import std.functional: toDelegate;
+
     EventMachine!(["StateA"], int delegate(int, int)) machine;
-    machine.on(machine.State.StateA, toDelegate(&add));
+    machine.onStateA(toDelegate(&add));
     assert(machine.goToStateA(1, 2) == [3], "The underlying event does not function properly.");
 }
 
 /// beforeEach and afterEach run appropriately.
 unittest
 {
-    EventMachine!(["StateA"], void delegate()) machine;
+    alias Machine = EventMachine!(["StateA"], void delegate());
+    Machine machine;
 
     bool beforeEachRan, afterEachRan;
 
     machine.beforeEach ~= (oldState, newState) {
-        assert(oldState == machine.State.Initial, "The machine moves from it's initial state.");
-        assert(newState == machine.State.StateA, "The machine moves to a non-initial state.");
+        assert(oldState == Machine.State.Initial, "The machine moves from it's initial state.");
+        assert(newState == Machine.State.StateA, "The machine moves to a non-initial state.");
         beforeEachRan = true;
         return true;
     };
 
     machine.afterEach ~= (oldState, newState) {
         afterEachRan = true;
-        assert(oldState == machine.State.Initial, "The machine moves from it's initial state.");
-        assert(newState == machine.State.StateA, "The machine moves to a non-initial state.");
+        assert(oldState == Machine.State.Initial, "The machine moves from it's initial state.");
+        assert(newState == Machine.State.StateA, "The machine moves to a non-initial state.");
     };
 
     machine.goToStateA();
@@ -218,9 +223,4 @@ unittest
     });
 
     machine.goToStateA();
-}
-
-version (D_Ddoc)
-{
-    EventMachine!(["StateA", "StateB", "StateC"]) machine;
 }

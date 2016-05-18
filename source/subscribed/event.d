@@ -6,9 +6,7 @@
  */
 module subscribed.event;
 
-import std.container: DList;
-import std.traits: isCallable, isDelegate, ReturnTypeTpl = ReturnType, ParameterTypeTuple;
-import std.array: array;
+import std.traits: isCallable;
 
 ///
 alias VoidEvent = Event!(void delegate());
@@ -23,14 +21,25 @@ alias VoidEvent = Event!(void delegate());
  */
 struct Event(Type) if (isCallable!Type)
 {
+    import std.container: DList;
+    import std.traits: ReturnTypeTpl = ReturnType, ParameterTypeTuple;
+    import std.array: array;
+
     /// The listeners' type.
     alias ListenerType = Type;
 
-    static if (is(ReturnTypeTpl!Type == void))
+    version (D_Ddoc)
+    {
         /// The event's return type.
         alias ReturnType = void;
+    }
     else
-        alias ReturnType = ReturnTypeTpl!Type[];
+    {
+        static if (is(ReturnTypeTpl!Type == void))
+            alias ReturnType = void;
+        else
+            alias ReturnType = ReturnTypeTpl!Type[];
+    }
 
     /// The event's argument type tuple.
     alias ParamTypes = ParameterTypeTuple!Type;
@@ -100,7 +109,7 @@ struct Event(Type) if (isCallable!Type)
      * Calls all the registered listeners in order.
      *
      * Params:
-     *  params = the param tuple to call the listener with.
+     *  params = The param tuple to call the listener with.
      *
      * Returns:
      *  An array of results from the listeners.
@@ -251,7 +260,7 @@ version (unittest)
     void doNothing() {}
 }
 
-/// The argument of the Event template is the listener signature.
+/// Events return all their listener outputs in dynamic arrays.
 unittest
 {
     Event!(int function(int, int)) event;
@@ -259,7 +268,7 @@ unittest
     assert(event(5, 5) == [10, 25], "The event does not return an array of it's calling values.");
 }
 
-/// The argument of the Event template is the listener signature.
+/// Adding and removing listeners is straightforward.
 unittest
 {
     Event!(int function(int, int)) event;
