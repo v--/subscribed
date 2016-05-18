@@ -16,12 +16,10 @@ alias VoidEvent = Event!(void delegate());
 /**
  * An event structure representing a one-to-many function/delegate relationship.
  * It mimics a function by overriding the call operator.
+ * It also implements the bidirectional range interface.
  *
  * Params:
  *  Type = The listener type this event contains.
- *
- * Returns:
- *  An array of results of the calls of the correspoding listeners.
  */
 struct Event(Type) if (isCallable!Type)
 {
@@ -44,21 +42,44 @@ struct Event(Type) if (isCallable!Type)
     }
 
     /// The number of listeners.
-    @property size()
+    @safe @nogc @property size() const
     {
         return _size;
     }
 
-    /// An array of all the listeners.
-    @property listeners()
+    /// A dynamic array of all the listeners.
+    @safe @property listeners()
     {
         return array(_listeners);
     }
 
-    /// A boolean property indicating whether there are listeners.
-    @property isEmpty()
+    /**
+     * A boolean property indicating whether there are listeners.
+     * Part of the bidirectional range interface.
+     */
+    @safe @nogc @property empty() const
     {
         return _listeners.empty;
+    }
+
+    /**
+     * The listener in the front.
+     * Part of the bidirectional range interface.
+     */
+    @safe @property Type front() const
+    {
+        if (empty) return null;
+        return _listeners.front;
+    }
+
+    /**
+     * The listener in the back.
+     * Part of the bidirectional range interface.
+     */
+    @safe @property Type back() const
+    {
+        if (empty) return null;
+        return _listeners.back;
     }
 
     ~this()
@@ -69,7 +90,7 @@ struct Event(Type) if (isCallable!Type)
     /**
      * Clears all listeners.
      */
-    void clear()
+    @safe void clear()
     {
         _size = 0;
         _listeners.clear;
@@ -106,9 +127,7 @@ struct Event(Type) if (isCallable!Type)
         }
     }
 
-    /**
-     * Aliases $(DDOC_PSYMBOL call).
-     */
+    /// Aliases $(DDOC_PSYMBOL call).
     ReturnType opCall(ParamTypes params)
     {
         static if (is(ReturnType == void))
@@ -119,46 +138,47 @@ struct Event(Type) if (isCallable!Type)
 
     /**
      * Removes the first listener.
-     *
-     * Returns:
-     *  The removed listener.
+     * Part of the bidirectional range interface.
      */
-    Type shift()
+    @safe void popFront()
     {
-        if (_listeners.empty)
-            return null;
-
+        if (empty) return;
         _size -= 1;
         _listeners.removeFront;
-        return null;
     }
 
     /**
      * Removes the last listener.
+     * Part of the bidirectional range interface.
+     */
+    @safe void popBack()
+    {
+        if (empty) return;
+        _size -= 1;
+        _listeners.removeBack;
+    }
+
+    /**
+     * Copies the event to allow multiple range-like iteration.
+     * Part of the bidirectional range interface.
      *
      * Returns:
-     *  The removed listener.
+     *  A copy of the event for independent iteration.
      */
-    Type pop()
+    @safe auto save()
     {
-        //if (_listeners.empty)
-            //return null;
-
-        //_size -= 1;
-        _listeners.removeBack;
-        return null;
+        Event!ListenerType newEvent;
+        newEvent._listeners = _listeners.dup;
+        return newEvent;
     }
 
     /**
      * Prepends a listener to the listener collection.
      *
      * Params:
-     *  listeners = The listeners to append.
-     *
-     * Returns:
-     *  The new size of the event.
+     *  listeners = The listeners to insert.
      */
-    void prepend(Type[] listeners...)
+    @safe void prepend(Type[] listeners...)
     {
         foreach (listener; listeners)
         {
@@ -171,12 +191,9 @@ struct Event(Type) if (isCallable!Type)
      * Appends a listener to the listener collection.
      *
      * Params:
-     *  listeners = The listeners to append.
-     *
-     * Returns:
-     *  The new size of the event.
+     *  listeners = The listeners to insert.
      */
-    void append(Type[] listeners...)
+    @safe void append(Type[] listeners...)
     {
         foreach (listener; listeners)
         {
@@ -191,7 +208,7 @@ struct Event(Type) if (isCallable!Type)
      * Params:
      *  listeners = The listeners to remove.
      */
-    void remove(Type[] listeners...)
+    @safe void remove(Type[] listeners...)
     {
         import std.algorithm: find;
 
@@ -206,18 +223,14 @@ struct Event(Type) if (isCallable!Type)
         }
     }
 
-    /**
-     * Aliases $(DDOC_PSYMBOL append).
-     */
-    void opOpAssign(string s: "~")(Type listener)
+    /// Aliases $(DDOC_PSYMBOL append).
+    @safe void opOpAssign(string s: "~")(Type listener)
     {
         append(listener);
     }
 
-    /**
-     * Aliases $(DDOC_PSYMBOL remove).
-     */
-    void opOpAssign(string s: "-")(Type listener)
+    /// Aliases $(DDOC_PSYMBOL remove).
+    @safe void opOpAssign(string s: "-")(Type listener)
     {
         remove(listener);
     }
@@ -238,43 +251,74 @@ version (unittest)
     void doNothing() {}
 }
 
-///
+/// The argument of the Event template is the listener signature.
 unittest
 {
-    // The argument of the Event template is the listener signature.
     Event!(int function(int, int)) event;
     event.append(&add, &multiply);
-    assert(event(5, 5) == [10, 25]);
+    assert(event(5, 5) == [10, 25], "The event does not return an array of it's calling values.");
+}
 
-    auto eventSize = event.size;
+/// The argument of the Event template is the listener signature.
+unittest
+{
+    Event!(int function(int, int)) event;
+    event.append(&add, &multiply);
+    assert(event.size == 2, "The event listener count does not increase upon addition.");
     event.remove(&add, &multiply);
-    assert(event.size < eventSize);
+    assert(event.size == 0, "The event listener count does not decrease upon removal.");
+}
 
-    Event!(void function()) voidEvent;
+/// You can add the same listener multiple times. When removing it however, all matching listeners get removed.
+unittest
+{
+    Event!(void function()) event;
 
-    // You can add the same listener multiple times. When removing it however, all matching listeners get removed.
-    voidEvent ~= &doNothing;
-    voidEvent.prepend(&doNothing);
-    voidEvent.append(&doNothing);
-    assert(voidEvent.size == 3); // The total number of listeners is returned on prepend/append.
+    event ~= &doNothing;
+    event.prepend(&doNothing);
+    event.append(&doNothing);
+    assert(event.size == 3, "The event listener does not add identical listeners.");
+    event.remove(&doNothing);
+    assert(event.listeners == [], "The event listener does not remove identical listeners.");
+}
 
-    voidEvent();
-    eventSize = voidEvent.size;
-    voidEvent.remove(&doNothing);
-    assert(voidEvent.size < eventSize);
-    voidEvent -= &doNothing;
-    assert(voidEvent.size == 0); // No listeners left.
-    assert(voidEvent.listeners == []);
+/// The event is a bidirectional range of it's listeners.
+unittest
+{
+    import std.range: isBidirectionalRange, isInputRange;
+    assert(isBidirectionalRange!VoidEvent, "The bidirectional range interface is not implemented.");
 
-    voidEvent ~= &doNothing;
+    Event!(void function()) event;
+    event ~= &doNothing;
+    auto checkpoint = event.save;
 
-    // You can off course shift and pop listeners.
-    //assert(voidEvent.shift() == &doNothing); // Returns doNothing.
-    assert(voidEvent.pop() == null); // Returns null, because no listeners are available.
+    foreach (listener; event) {}
 
-    voidEvent ~= &doNothing;
+    assert(event.empty, "The range is cleared after iteration.");
+    assert(!checkpoint.empty, "The range checkpoint is not cleared after iteration.");
+}
 
-    // In case you want to remove all listeners:
-    assert(!voidEvent.isEmpty); // The event has one listener.
-    voidEvent.clear();
+/// Range mutation primitives work.
+unittest
+{
+    import std.exception: assertNotThrown;
+
+    Event!(void function()) event;
+
+    event ~= &doNothing;
+    assert(event.front == &doNothing, "Returns the last remaining listener.");
+    event.popFront();
+    assert(event.back == null, "Does not return null when no listeners are present.");
+    assertNotThrown(event.popBack(), "Popping an empty event throws.");
+}
+
+/// In case you want to remove all listeners.
+unittest
+{
+    Event!(void function()) event;
+
+    event ~= &doNothing;
+    assert(!event.empty, "The event has no listeners, one listener expected.");
+    event.clear();
+    assert(event.empty, "The event is not empty.");
 }

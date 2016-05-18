@@ -19,11 +19,11 @@ import subscribed.event;
 alias VoidMediator = Mediator!(void delegate());
 
 /**
- * A hash table of events with beforeEach and afterEach hooks
+ * A hash table of events with beforeEach and afterEach hooks.
  *
  * Params:
  *  Type = The listener type this event contains. Default is `void delegate()`.
- *  KeyType = The hash table key type. Default is `string`
+ *  KeyType = The hash table key type. Default is `string`.
  */
 struct Mediator(Type, KeyType = string) if (isCallable!Type)
 {
@@ -130,7 +130,7 @@ struct Mediator(Type, KeyType = string) if (isCallable!Type)
     }
 }
 
-///
+/// The mediator can subscribe, unsubscribe and broadcast events.
 unittest
 {
     VoidMediator mediator;
@@ -150,26 +150,28 @@ unittest
     mediator.on("inc", &increment);
     mediator.on("dec", &decrement);
 
-    assert(counter == 0);
+    assert(counter == 0, "Mediator functions are called before any action is performed");
     mediator.emit("inc");
-    assert(counter == 1);
+    assert(counter == 1, "The mediator does not call one of it's functions");
     mediator.emit("dec");
-    assert(counter == 0);
+    assert(counter == 0, "The mediator does not call one of it's functions");
 
     mediator.beforeEach ~= () => false;
 
-    assert(counter == 0);
+    assert(counter == 0, "The beforeEach hook does not work");
     mediator.emit("inc");
-    assert(counter == 0);
+    assert(counter == 0, "The beforeEach hook does not work");
     mediator.emit("dec");
-    assert(counter == 0);
+    assert(counter == 0, "The beforeEach hook does not work");
+
+    mediator.beforeEach.clear();
 
     mediator.off("inc", &increment);
     mediator.off("dec", &decrement);
 
-    assert(counter == 0);
+    assert(counter == 0, "The mediator called one of it's functions while unregistering them");
     mediator.emit("inc");
-    assert(counter == 0);
+    assert(counter == 0, "The mediator did not remove a listener");
     mediator.emit("dec");
-    assert(counter == 0);
+    assert(counter == 0, "The mediator did not remove a listener");
 }

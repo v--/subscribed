@@ -55,7 +55,7 @@ struct EventMachine(string[] States, Type = void delegate())
     }
 
     /// The active state.
-    @property state()
+    @safe @nogc @property state() const
     {
         return _state;
     }
@@ -71,7 +71,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    void on(State state, EventType.ListenerType[] listeners...)
+    @safe void on(State state, EventType.ListenerType[] listeners...)
     {
         _states[state].append(listeners);
     }
@@ -86,7 +86,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    void off(State state, EventType.ListenerType[] listeners...)
+    @safe void off(State state, EventType.ListenerType[] listeners...)
     {
         _states[state].remove(listeners);
     }
@@ -139,7 +139,6 @@ struct EventMachine(string[] States, Type = void delegate())
         return q{
             void on%1$s(EventType.ListenerType[] listeners...)
             {
-                _states[state].append(listeners);
                 on(State.%1$s, listeners);
             }
 
@@ -159,34 +158,69 @@ version (unittest)
     }
 }
 
-///
+/// An event machine stores it's state.
 unittest
 {
-    EventMachine!(["StateA", "StateB", "StateC"], int delegate(int, int)) machine;
-    assert(machine.state == machine.State.Initial);
-    machine.on(machine.State.StateA, toDelegate(&add));
-    assert(machine.goToStateA(1, 2) == [3]);
-    assert(machine.state == machine.State.StateA);
-    machine.go(machine.state, 2, 3); // Ensure loops are possible.
+    EventMachine!(["StateA", "StateB"]) machine;
+    assert(machine.state == machine.State.Initial, "The machine is not initially in it's default state.");
+    machine.goToStateA();
+    assert(machine.state == machine.State.StateA, "The machine does not navigate to other states.");
+    machine.goToStateA();
+    assert(machine.state == machine.State.StateA, "The machine does not permit loops.");
+    machine.goToStateB();
+    assert(machine.state == machine.State.StateB, "The machine does not navigate to other states after exiting the initial one.");
+}
 
-    bool flag;
+/// Switching states calls the corresponding events.
+unittest
+{
+    EventMachine!(["StateA"], int delegate(int, int)) machine;
+    machine.on(machine.State.StateA, toDelegate(&add));
+    assert(machine.goToStateA(1, 2) == [3], "The underlying event does not function properly.");
+}
+
+/// beforeEach and afterEach run appropriately.
+unittest
+{
+    EventMachine!(["StateA"], void delegate()) machine;
+
+    bool beforeEachRan, afterEachRan;
 
     machine.beforeEach ~= (oldState, newState) {
-        assert(oldState == machine.State.StateA && !flag);
-        return newState != machine.State.StateC;
+        assert(oldState == machine.State.Initial, "The machine moves from it's initial state.");
+        assert(newState == machine.State.StateA, "The machine moves to a non-initial state.");
+        beforeEachRan = true;
+        return true;
     };
 
     machine.afterEach ~= (oldState, newState) {
-        assert(oldState == machine.State.StateA);
+        afterEachRan = true;
+        assert(oldState == machine.State.Initial, "The machine moves from it's initial state.");
+        assert(newState == machine.State.StateA, "The machine moves to a non-initial state.");
     };
 
-    machine.goToStateC(5, 5);
-    assert(machine.state == machine.State.StateA);
-    assert(!flag);
-    machine.goToStateB(5, 5);
+    machine.goToStateA();
+    assert(beforeEachRan, "The beforeEach hook has been ran.");
+    assert(afterEachRan, "The afterEach hook has been ran.");
+}
+
+/// beforeEach can cancel subsequent events.
+unittest
+{
+    EventMachine!(["StateA"], void delegate()) machine;
+
+    machine.beforeEach ~= (oldState, newState) {
+        return false;
+    };
+
+    machine.onStateA(() {
+        assert(false, "The machine moves to StateA despite the failing beforeEach check.");
+    });
+
+    machine.goToStateA();
 }
 
 version (D_Ddoc)
 {
-    EventMachine!(["StateA", "StateB"]) machine;
+    EventMachine!(["StateA", "StateB", "StateC"]) machine;
 }
