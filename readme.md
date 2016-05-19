@@ -1,13 +1,13 @@
 # subscribe.d
 
-[![Build Status](https://api.travis-ci.org/v--/subscribed.svg?branch=master)](https://api.travis-ci.org/v--/subscribed.svg?branch=master)
+[![Build Status](https://api.travis-ci.org/v--/subscribed.svg?branch=master)](https://api.travis-ci.org/v--/subscribed.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/v--/subscribed/badge.svg?branch=master)](https://coveralls.io/github/v--/subscribed?branch=master) [![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
 
 ---
 
 A minimalistic library providing eventing-related structures.
 
-There are three modules in the package (all are publicly imported in the `subscribed` package module).
-A forth module, `support`, is used internally and is not part of the public API.
+All structures can be publicly imported with the `subscribed` package module or as separate modules.
+A private module, `subscribed.support`, is used internally and is not part of the public API.
 
 ## Modules
 
