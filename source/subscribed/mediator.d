@@ -18,16 +18,16 @@ struct Channel
      * Infers channel data from a callable and a string.
      *
      * Params:
-     *  Name = The key that will be used to identify the channel.
+     *  name = The key that will be used to identify the channel.
      *  Type = The callable type to use for the channel.
      *
      * Returns:
      *  The inferred channel information.
      */
-    @safe @nogc static Channel infer(string Name, Type)() pure
-        if (isValidIdentifier(Name) && isCallable!Type)
+    @safe @nogc static Channel infer(string name, Type)() pure
+        if (isValidIdentifier(name) && isCallable!Type)
     {
-        return Channel(Name, Type.stringof);
+        return Channel(name, Type.stringof);
     }
 
     /// The name of the channel.

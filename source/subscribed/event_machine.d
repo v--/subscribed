@@ -70,7 +70,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    @safe void on(const State state, EventType.ListenerType[] listeners...)
+    @safe void on(State state)(EventType.ListenerType[] listeners...) if (state != State.Initial)
     {
         _states[state].append(listeners);
     }
@@ -85,7 +85,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.append
      */
-    @safe void off(const State state, EventType.ListenerType[] listeners...)
+    @safe void off(State state)(EventType.ListenerType[] listeners...) if (state != State.Initial)
     {
         _states[state].remove(listeners);
     }
@@ -105,7 +105,7 @@ struct EventMachine(string[] States, Type = void delegate())
      * See_Also:
      *  subscribed.event.Event.call
      */
-    EventType.ReturnType go(const State state, EventType.ParamTypes params)
+    EventType.ReturnType go(State state)(EventType.ParamTypes params) if (state != State.Initial)
     {
         foreach (condition; beforeEach(_state, state))
         {
@@ -139,12 +139,12 @@ struct EventMachine(string[] States, Type = void delegate())
         return q{
             void on%1$s(EventType.ListenerType[] listeners...)
             {
-                on(State.%1$s, listeners);
+                on!(State.%1$s)(listeners);
             }
 
             EventType.ReturnType goTo%1$s(EventType.ParamTypes params)
             {
-                %2$s go(State.%1$s, params);
+                %2$s go!(State.%1$s)(params);
             }
         }.format(state, is(EventType.ReturnType == void) ? "" : "return");
     }).join());
@@ -156,6 +156,15 @@ version (unittest)
     {
         return a + b;
     }
+}
+
+/// An event machine cannot go to it's initial state
+unittest
+{
+    alias Machine = EventMachine!(["State"]);
+    Machine machine;
+
+    assert(!__traits(compiles, machine.go!(Machine.State.Initial)), "The machine can return to it's initial state state.");
 }
 
 /// An event machine stores it's state.
