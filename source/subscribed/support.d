@@ -1,9 +1,4 @@
-/**
- * Various support functions.
- * Authors: Ianis G. Vasilev `<mail@ivasilev.net>`
- * Copyright: Copyright © 2016, Ianis G. Vasilev
- * License: BSL-1.0
- */
+/// Various support functions.
 module subscribed.support;
 
 /**

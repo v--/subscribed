@@ -1,9 +1,4 @@
-/**
- * A simple mediator implementation.
- * Authors: Ianis G. Vasilev `<mail@ivasilev.net>`
- * Copyright: Copyright © 2016, Ianis G. Vasilev
- * License: BSL-1.0
- */
+// A simple mediator implementation.
 module subscribed.mediator;
 
 import std.traits: isCallable;
@@ -50,9 +45,9 @@ unittest
  * More precisely, an event collection with a unified interface and beforeEach/afterEach hooks.
  *
  * Params:
- *  Channels = A dynamic array of Channel objects.
+ *  channels = A dynamic array of Channel objects.
  */
-struct Mediator(Channel[] Channels)
+struct Mediator(Channel[] channels)
 {
     import std.algorithm: all, map;
     import std.string: format, split, indexOf;
@@ -114,14 +109,14 @@ struct Mediator(Channel[] Channels)
             {
                 %s
             }
-        }.format(Channels
+        }.format(channels
             .map!((Channel channel) => "_%s.destroy();".format(channel.name))
             .array
             .join("")
         )
     );
 
-    mixin(Channels.map!((Channel channel) {
+    mixin(channels.map!((Channel channel) {
         return q{
             private
             {

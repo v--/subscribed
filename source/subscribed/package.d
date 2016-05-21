@@ -1,9 +1,4 @@
-/**
- * A minimalistic library providing eventing-related structures.
- * Authors: Ianis G. Vasilev `<mail@ivasilev.net>`
- * Copyright: Copyright © 2015-2016, Ianis G. Vasilev
- * License: BSL-1.0
- */
+/// A minimalistic library providing eventing-related structures.
 module subscribed;
 
 public import subscribed.event;
@@ -14,7 +9,7 @@ public import subscribed.mediator;
 unittest
 {
     // Create and instantiate a simple finite-state machine structure.
-    alias SimpleMachine = EventMachine!(["Running", "Stopped"]);
+    alias SimpleMachine = EventMachine!(["running", "stopped"]);
     SimpleMachine machine;
 
     // Instantiate a mediator.
@@ -37,21 +32,21 @@ unittest
     // Make sure nothing happens while the machine is not running.
     // The listeners are only ran if the beforeEach hooks all return true.
     mediator.beforeEach ~= () {
-        return machine.state == SimpleMachine.State.Running;
+        return machine.state == SimpleMachine.State.running;
     };
 
     // Bind some events to the machine state changes.
-    machine.onStopped(() {
+    machine.on!"stopped"(() {
         mediator.emit!"reset";
     });
 
     // Experiment with different operations.
-    machine.goToRunning();
+    machine.go!"running";
     mediator.emit!"increment"(5);
     mediator.emit!"increment"(3);
     assert(counter == 8, "The counter has not incremented.");
 
-    machine.goToStopped();
+    machine.go!"stopped";
     assert(counter == 0, "The counter was not reset by the machine.");
 
     mediator.emit!"increment"(3);
