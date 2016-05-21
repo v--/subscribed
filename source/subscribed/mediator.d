@@ -9,6 +9,7 @@ import subscribed.event;
 /// A helper structure for statically creating mediator channels.
 struct Channel
 {
+    import std.traits : fullyQualifiedName;
     /**
      * Infers channel data from a callable and a string.
      *
@@ -19,25 +20,37 @@ struct Channel
      * Returns:
      *  The inferred channel information.
      */
-    @safe @nogc static Channel infer(string name, Type)() pure
+    @safe static Channel infer(string name, Type)()
         if (isValidIdentifier(name) && isCallable!Type)
     {
-        return Channel(name, Type.stringof);
+        import std.traits : ParameterTypeTuple, moduleName;
+        import std.string : format;
+        string[] imports;
+
+        foreach (paramType; ParameterTypeTuple!Type)
+            static if (__traits(compiles, moduleName!paramType))
+                imports ~= `import %1$s : %2$s;`.format(moduleName!paramType, paramType.stringof);
+
+        return Channel(name, Type.stringof, imports);
     }
 
     /// The name of the channel.
-    immutable string name;
+    string name;
 
     /// A string containing the type of the channel.
-    immutable string type;
+    string type;
+
+    /// The imports and that sould be imported.
+    string[] imports;
 }
 
 /// A channel name an function type can be inferred.
 unittest
 {
-    auto channel = Channel.infer!("name", void function());
+    immutable channel = Channel.infer!("name", void function(Channel));
     assert(channel.name == "name", "Could not infer the channel name.");
-    assert(channel.type == "void function()", "Could not infer the channel type.");
+    assert(channel.type == "void function(Channel)", "Could not infer the channel type.");
+    assert(channel.imports == ["import subscribed.mediator : Channel;"], "Could not infer the required imports.");
 }
 
 /**
@@ -46,6 +59,10 @@ unittest
  *
  * Params:
  *  channels = A dynamic array of Channel objects.
+ *
+ * Bugs:
+ *  Because of the way the mediator is implemented (through string mixins), user-defined structures will not work without cyclic imports.
+ *  This may cause some problems, most notably with static constructors.
  */
 struct Mediator(Channel[] channels)
 {
@@ -112,12 +129,14 @@ struct Mediator(Channel[] channels)
         }.format(channels
             .map!((Channel channel) => "_%s.destroy();".format(channel.name))
             .array
-            .join("")
+            .join("\n")
         )
     );
 
     mixin(channels.map!((Channel channel) {
         return q{
+            %3$s
+
             private
             {
                 alias %2$sEventType = Event!(%1$s);
@@ -157,8 +176,8 @@ struct Mediator(Channel[] channels)
                     return result;
                 }
             }
-        }.format(channel.type, channel.name);
-    }).array.join(""));
+        }.format(channel.type, channel.name, channel.imports.join("\n"));
+    }).array.join("\n"));
 }
 
 /// The mediator can subscribe, unsubscribe and broadcast events.
