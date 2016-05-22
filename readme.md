@@ -63,8 +63,8 @@ mediator.on!"increment"((int amount) {
 
 // Make sure nothing happens while the machine is not running.
 // The listeners are only ran if the beforeEach hooks all return true.
-mediator.beforeEach ~= () {
-    return machine.state == SimpleMachine.State.running;
+mediator.beforeEach ~= (string channel) {
+    return channel == "reset" || machine.state == SimpleMachine.State.running;
 };
 
 // Bind some events to the machine state changes.

@@ -71,10 +71,10 @@ struct Mediator(Channel[] channels)
     import std.array : array, join;
 
     /// The hook to be executed before any transition. If false is returned, the no transition occurs.
-    Event!(bool delegate()) beforeEach;
+    Event!(bool delegate(string)) beforeEach;
 
     /// The hook to be executed after a successful transition.
-    Event!(void delegate()) afterEach;
+    Event!(void delegate(string)) afterEach;
 
     version (D_Ddoc)
     {
@@ -155,7 +155,7 @@ struct Mediator(Channel[] channels)
 
             %2$sEventType.ReturnType emit(string channel: "%2$s")(%2$sEventType.ParamTypes params)
             {
-                foreach (condition; beforeEach()) {
+                foreach (condition; beforeEach(channel)) {
                     if (!condition) {
                         static if (is(%2$sEventType.ReturnType == void))
                             return;
@@ -167,12 +167,12 @@ struct Mediator(Channel[] channels)
                 static if (is(%2$sEventType.ReturnType == void))
                 {
                     _%2$s.call(params);
-                    afterEach();
+                    afterEach(channel);
                 }
                 else
                 {
                     auto result = _%2$s.call(params);
-                    afterEach();
+                    afterEach(channel);
                     return result;
                 }
             }
@@ -209,7 +209,7 @@ unittest
     mediator.emit!"dec";
     assert(counter == 0, "The mediator does not call one of it's functions.");
 
-    mediator.beforeEach ~= () => false;
+    mediator.beforeEach ~= string => false;
 
     assert(counter == 0, "The beforeEach hook does not work.");
     mediator.emit!"inc";
