@@ -1,7 +1,7 @@
 /// An event structure representing a one-to-many function/delegate relationship.
 module subscribed.event;
 
-import std.traits: isCallable;
+import std.traits : isCallable;
 
 ///
 alias VoidEvent = Event!(void delegate());
@@ -16,9 +16,9 @@ alias VoidEvent = Event!(void delegate());
  */
 struct Event(Type) if (isCallable!Type)
 {
-    import std.container: DList;
-    import std.traits: ReturnTypeTpl = ReturnType, ParameterTypeTuple;
-    import std.array: array;
+    import std.container : DList;
+    import std.traits : ReturnTypeTpl = ReturnType, ParameterTypeTuple;
+    import std.array : array;
 
     /// The listeners' type.
     alias ListenerType = Type;
@@ -214,7 +214,7 @@ struct Event(Type) if (isCallable!Type)
      */
     @safe void remove(Type[] listeners...)
     {
-        import std.algorithm: find;
+        import std.algorithm : find;
 
         foreach (listener; listeners)
         {
@@ -289,7 +289,7 @@ unittest
 /// The event is a bidirectional range of it's listeners.
 unittest
 {
-    import std.range: isBidirectionalRange, isInputRange;
+    import std.range : isBidirectionalRange, isInputRange;
     assert(isBidirectionalRange!VoidEvent, "The bidirectional range interface is not implemented.");
 
     Event!(void function()) event;
@@ -305,7 +305,7 @@ unittest
 /// Range mutation primitives work.
 unittest
 {
-    import std.exception: assertNotThrown;
+    import std.exception : assertNotThrown;
 
     Event!(void function()) event;
 

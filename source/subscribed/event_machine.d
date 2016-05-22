@@ -1,8 +1,8 @@
 /// An event machine structure slightly resembling finite automata.
 module subscribed.event_machine;
 
-import std.algorithm: all;
-import std.traits: isCallable;
+import std.algorithm : all;
+import std.traits : isCallable;
 
 import subscribed.support;
 import subscribed.event;
@@ -23,9 +23,9 @@ struct EventMachine(string[] states, Type = void delegate())
         return isValidIdentifier(state) && state != "initial";
     }))
 {
-    import std.algorithm: map;
-    import std.string: format;
-    import std.range: join;
+    import std.algorithm : map;
+    import std.string : format;
+    import std.range : join;
 
     version (D_Ddoc)
         /// An enum generated from ["initial"], concatenated with the $(DDOC_PSYMBOL states) array.
@@ -180,7 +180,7 @@ unittest
 /// Switching states calls the corresponding events.
 unittest
 {
-    import std.functional: toDelegate;
+    import std.functional : toDelegate;
 
     EventMachine!(["stateA"], int delegate(int, int)) machine;
     machine.on!"stateA"(toDelegate(&add));

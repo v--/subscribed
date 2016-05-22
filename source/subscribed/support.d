@@ -11,8 +11,8 @@ module subscribed.support;
  */
 @safe bool isValidIdentifier(const string identifier) pure
 {
-    import std.algorithm: all;
-    import std.uni: isNumber, isAlpha;
+    import std.algorithm : all;
+    import std.uni : isNumber, isAlpha;
 
     return identifier.length > 0 &&
         !isNumber(identifier[0]) &&

@@ -1,7 +1,7 @@
 // A simple mediator implementation.
 module subscribed.mediator;
 
-import std.traits: isCallable;
+import std.traits : isCallable;
 
 import subscribed.support;
 import subscribed.event;
@@ -49,9 +49,9 @@ unittest
  */
 struct Mediator(Channel[] channels)
 {
-    import std.algorithm: all, map;
-    import std.string: format, split, indexOf;
-    import std.array: array, join;
+    import std.algorithm : all, map;
+    import std.string : format, split, indexOf;
+    import std.array : array, join;
 
     /// The hook to be executed before any transition. If false is returned, the no transition occurs.
     Event!(bool delegate()) beforeEach;
