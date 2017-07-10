@@ -87,4 +87,4 @@ assert(counter == 0, "The counter has incremented despite the machine being stop
 
 ## Documentation
 
-A ddox-generated documentation with example usage can be found [here](http://ivasilev.net/docs/subscribed/index.html).
+A ddox-generated documentation with example usage can be found [here](https://ivasilev.net/files/Docs/subscribed/index.html).
