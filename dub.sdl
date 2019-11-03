@@ -1,8 +1,0 @@
-name "subscribed"
-description "A minimalistic library providing eventing-related structures."
-copyright "Copyright © 2015-2016, Ianis G. Vasilev"
-authors "Ianis G. Vasilev"
-license "BSL-1.0"
-targetType "library"
-
-dependency "experimental_allocator" version="~>2.70.0-b1"

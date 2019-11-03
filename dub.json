@@ -1,0 +1,9 @@
+{
+  "authors": [
+    "Ianis Vasilev"
+  ],
+  "description": "A minimalistic library providing eventing-related structures",
+  "license": "Unlicense",
+  "name": "subscribed",
+  "type": "library"
+}

@@ -3,6 +3,6 @@ docs.json
 __dummy.html
 *.o
 *.obj
-__test__library__
 libsubscribed.a
+subscribed-test-library
 docs
