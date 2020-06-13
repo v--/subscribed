@@ -1,13 +1,13 @@
 /// A minimalistic library providing eventing-related structures.
 module subscribed;
 
-/// <a href="./event.html">Go to the docs for the Event struct.</a>
+/// <a href="./subscribed.event.html">Go to the docs for the Event struct.</a>
 public import subscribed.event;
 
-/// <a href="./event_machine.html">Go to the docs for the EventMachine struct.</a>
+/// <a href="./subscribed.event_machine.html">Go to the docs for the EventMachine struct.</a>
 public import subscribed.event_machine;
 
-/// <a href="./mediator.html">Go to the docs for the Mediator struct.</a>
+/// <a href="./subscribed.mediator.html">Go to the docs for the Mediator struct.</a>
 public import subscribed.mediator;
 
 ///

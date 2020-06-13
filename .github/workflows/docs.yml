@@ -1,0 +1,32 @@
+name: Docs
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on:  ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set env
+      run: echo ::set-env name=REF::${GITHUB_REF#refs/*/}
+
+    - name: Install system packages
+      run: sudo apt install ldc dub
+
+    - name: Build docs
+      run: dub build --compiler=ldc2 --build=docs
+
+    - name: Deploy docs
+      run: |
+        echo '${{ secrets.SFTP_KEY }}' > ssh_id
+        chmod 600 ssh_id
+        echo 'mkdir ${{ secrets.SFTP_ROOT }}/${{ env.REF }}
+              cd ${{ secrets.SFTP_ROOT }}/${{ env.REF }}
+              put -R docs/*
+        ' | sftp -i ssh_id -o StrictHostKeyChecking=no -o Port=${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}

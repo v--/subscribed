@@ -1,0 +1,16 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on:  ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install system packages
+      run: sudo apt install ldc dub
+
+    - name: Run unit tests
+      run: dub test --compiler=ldc2
