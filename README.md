@@ -1,6 +1,6 @@
 # subscribe.d
 
-[![CI](https://github.com/v--/subscribed/workflows/CI/badge.svg)](https://github.com/v--/subscribed/actions?query=workflow%3ACI) [![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
+[![Tests](https://github.com/v--/subscribed/workflows/tests/badge.svg)](https://github.com/v--/subscribed/actions?query=workflow%3ATests) [![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
 
 ---
 
