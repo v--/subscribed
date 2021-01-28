@@ -8,25 +8,26 @@ on:
 
 jobs:
   build:
-    runs-on:  ubuntu-20.04
+    runs-on:  ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set env
-      run: echo ::set-env name=REF::${GITHUB_REF#refs/*/}
-
-    - name: Install system packages
-      run: sudo apt install ldc dub
+    - uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: ldc-latest
 
     - name: Build docs
-      run: dub build --compiler=ldc2 --build=docs
+      run: dub build --build=docs
+
+    - name: Set branch name
+      uses: nelonoel/branch-name@v1.0.1
 
     - name: Deploy docs
       run: |
         echo '${{ secrets.SFTP_KEY }}' > ssh_id
         chmod 600 ssh_id
-        echo 'mkdir ${{ secrets.SFTP_ROOT }}/${{ env.REF }}
-              cd ${{ secrets.SFTP_ROOT }}/${{ env.REF }}
+        echo "mkdir ${{ secrets.SFTP_ROOT }}/$BRANCH_NAME
+              cd ${{ secrets.SFTP_ROOT }}/$BRANCH_NAME
               put -R docs/*
-        ' | sftp -i ssh_id -o StrictHostKeyChecking=no -o Port=${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}
+        " | sftp -i ssh_id -o StrictHostKeyChecking=no -o Port=${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}

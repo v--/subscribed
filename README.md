@@ -1,8 +1,6 @@
 # subscribe.d
 
-[![Tests](https://github.com/v--/subscribed/workflows/tests/badge.svg)](https://github.com/v--/subscribed/actions?query=workflow%3ATests) [![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
-
----
+[![Tests](https://github.com/v--/subscribed/workflows/Tests/badge.svg)](https://github.com/v--/subscribed/actions?query=workflow%3ATests) [![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
 
 A minimalistic library providing eventing-related structures.
 
