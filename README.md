@@ -7,6 +7,8 @@ A minimalistic library providing eventing-related structures.
 All structures can be publicly imported with the `subscribed` package module or as separate modules.
 A "private" module, `subscribed.slist`, is used internally and is not part of the public API.
 
+Below is a brief introduction. Automatically generated documentation can be found in http://v--.github.io/subscribed/.
+
 ## Modules
 
 ### `subscribed.event`
@@ -75,9 +77,3 @@ assert(counter == 0, "The counter was not reset by the machine");
 mediator.emit!(SimpleEvent.increment)(3);
 assert(counter == 0, "The counter has incremented despite the machine being stopped");
 ```
-
-## Documentation
-
-The following pre-built documentation is available:
-* [Auto-generated docs](https://ivasilev.net/files/Docs/subscribed/master/subscribed.html) from the `master` branch
-* An [index](https://ivasilev.net/files/Docs/subscribed) of version-specific docs
