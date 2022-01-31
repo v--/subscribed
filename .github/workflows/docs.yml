@@ -3,8 +3,9 @@ name: Docs
 on:
   push:
     branches: [master]
-  release:
-    types: [published]
+  create:
+    tags:
+      - v*
 
 jobs:
   build:
@@ -20,13 +21,10 @@ jobs:
     - name: Build docs
       run: dub build --build=docs
 
-    - name: Set branch name
-      uses: nelonoel/branch-name@v1.0.1
-
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs
-        destination_dir: ./docs/${{ env.BRANCH_NAME }}
+        destination_dir: ./docs/${{ github.ref_name }}
         enable_jekyll: true
