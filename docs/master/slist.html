@@ -417,6 +417,10 @@
         white-space: pre-wrap;
       }
 
+      .ddoc .code_lines pre {
+        display: contents;
+      }
+
       .ddoc .code_lines li:only-of-type::before {
         color: rgba(255, 255, 255, 1);
         content: " ";
@@ -610,7 +614,7 @@
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="SList.empty"></span>const bool <code class="code">empty</code>();
+            <span class="ddoc_anchor" id="SList.empty"></span>bool <code class="code">empty</code>() const;
 
           </code>
         </p>
@@ -643,7 +647,7 @@
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="SList.front"></span>const T <code class="code">front</code>();
+            <span class="ddoc_anchor" id="SList.front"></span>T <code class="code">front</code>() const;
 
           </code>
         </p>
@@ -734,7 +738,7 @@
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="SList.back"></span>const T <code class="code">back</code>();
+            <span class="ddoc_anchor" id="SList.back"></span>T <code class="code">back</code>() const;
 
           </code>
         </p>

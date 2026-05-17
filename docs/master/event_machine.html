@@ -417,6 +417,10 @@
         white-space: pre-wrap;
       }
 
+      .ddoc .code_lines pre {
+        display: contents;
+      }
+
       .ddoc .code_lines li:only-of-type::before {
         color: rgba(255, 255, 255, 1);
         content: " ";
@@ -597,7 +601,7 @@
   <div class="code_sample">
     <div class="dlang">
       <ol class="code_lines">
-        <li><code class="code"><span class="keyword">enum</span> State { stateA, stateB }
+        <li><pre><code class="code"><span class="keyword">enum</span> State { stateA, stateB }
 <span class="keyword">alias</span> Machine = <span class="psymbol">EventMachine</span>!State;
 Machine machine;
 
@@ -608,7 +612,7 @@ machine.go!(State.stateB)();
 <span class="keyword">assert</span>(machine.state == State.stateB, <span class="string_literal">"The machine does not permit loops"</span>);
 machine.go!(State.stateA)();
 <span class="keyword">assert</span>(machine.state == State.stateA, <span class="string_literal">"The machine does not navigate to other states"</span>);
-</code></li>
+</code></pre></li>
       </ol>
     </div>
   </div>
@@ -624,14 +628,14 @@ machine.go!(State.stateA)();
   <div class="code_sample">
     <div class="dlang">
       <ol class="code_lines">
-        <li><code class="code"><span class="keyword">enum</span> State { stateA = -21, stateB = 3 }
+        <li><pre><code class="code"><span class="keyword">enum</span> State { stateA = -21, stateB = 3 }
 <span class="keyword">alias</span> Machine = <span class="psymbol">EventMachine</span>!State;
 Machine machine;
 
 <span class="keyword">assert</span>(machine.state == State.stateA, <span class="string_literal">"The machine is not initially in it's default state"</span>);
 machine.go!(State.stateB)();
 <span class="keyword">assert</span>(machine.state == State.stateB, <span class="string_literal">"The machine does not navigate to other states"</span>);
-</code></li>
+</code></pre></li>
       </ol>
     </div>
   </div>
@@ -647,7 +651,7 @@ machine.go!(State.stateB)();
   <div class="code_sample">
     <div class="dlang">
       <ol class="code_lines">
-        <li><code class="code"><span class="keyword">enum</span> State { stateA, stateB }
+        <li><pre><code class="code"><span class="keyword">enum</span> State { stateA, stateB }
 <span class="keyword">alias</span> Machine = <span class="psymbol">EventMachine</span>!(State, <span class="keyword">void</span> <span class="keyword">delegate</span>());
 Machine machine;
 
@@ -669,7 +673,7 @@ machine.afterEach ~= (oldState, newState) {
 machine.go!(State.stateB)();
 <span class="keyword">assert</span>(beforeEachRan, <span class="string_literal">"The beforeEach hook has been ran"</span>);
 <span class="keyword">assert</span>(afterEachRan, <span class="string_literal">"The afterEach hook has been ran"</span>);
-</code></li>
+</code></pre></li>
       </ol>
     </div>
   </div>
@@ -685,7 +689,7 @@ machine.go!(State.stateB)();
   <div class="code_sample">
     <div class="dlang">
       <ol class="code_lines">
-        <li><code class="code"><span class="keyword">enum</span> State { stateA, stateB }
+        <li><pre><code class="code"><span class="keyword">enum</span> State { stateA, stateB }
 <span class="keyword">alias</span> Machine = <span class="psymbol">EventMachine</span>!(State, <span class="keyword">void</span> <span class="keyword">delegate</span>());
 Machine machine;
 
@@ -698,7 +702,7 @@ machine.on!(State.stateA)(() {
 });
 
 machine.go!(State.stateA)();
-</code></li>
+</code></pre></li>
       </ol>
     </div>
   </div>
@@ -848,7 +852,7 @@ machine.go!(State.stateA)();
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="EventMachine.state"></span>const State <code class="code">state</code>();
+            <span class="ddoc_anchor" id="EventMachine.state"></span>State <code class="code">state</code>() const;
 
           </code>
         </p>

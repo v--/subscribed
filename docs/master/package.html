@@ -3,7 +3,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>subscribed.mediator</title>
+    <title>subscribed</title>
     <style type="text/css" media="screen">
       html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p,
       blockquote, pre, a, abbr, address, cite, code, del, dfn, em, figure,
@@ -417,6 +417,10 @@
         white-space: pre-wrap;
       }
 
+      .ddoc .code_lines pre {
+        display: contents;
+      }
+
       .ddoc .code_lines li:only-of-type::before {
         color: rgba(255, 255, 255, 1);
         content: " ";
@@ -508,15 +512,85 @@
   <body id="ddoc_main" class="ddoc dlang">
     <div class="content_wrapper">
       <article class="module">
-        <h1 class="module_name">subscribed.mediator</h1>
-        <section id="module_content">
+        <h1 class="module_name">subscribed</h1>
+        <section id="module_content"><section class="section ddoc_sections">
+  <div class="ddoc_summary">
+  <p class="para">
+    A minimalistic library providing eventing-related structures.
+  </p>
+</div>
+<div class="ddoc_examples">
+  <h4>Examples</h4>
+  <p class="para">
+    
+<section class="code_listing">
+  <div class="code_sample">
+    <div class="dlang">
+      <ol class="code_lines">
+        <li><pre><code class="code"><span class="comment">// Create and instantiate a simple finite-state machine structure.
+</span><span class="keyword">enum</span> SimpleState { running, stopped }
+<span class="keyword">alias</span> SimpleMachine = EventMachine!SimpleState;
+SimpleMachine machine;
+
+<span class="comment">// Create and instantiate a simple mediator.
+</span><span class="keyword">enum</span> SimpleEvent { reset, increment }
+<span class="keyword">alias</span> SimpleMediator = Mediator!(
+    SimpleEvent.reset, <span class="keyword">void</span> <span class="keyword">delegate</span>(),
+    SimpleEvent.increment, <span class="keyword">void</span> <span class="keyword">delegate</span>(<span class="keyword">int</span>)
+);
+SimpleMediator mediator;
+
+<span class="comment">// Initialize a counter
+</span><span class="keyword">int</span> counter;
+
+<span class="comment">// Bind some events to the mediator.
+</span>mediator.on!(SimpleEvent.reset)(() {
+    counter = 0;
+});
+
+mediator.on!(SimpleEvent.increment)((<span class="keyword">int</span> amount) {
+    counter += amount;
+});
+
+<span class="comment">// Make sure nothing happens while the machine is not running.
+</span><span class="comment">// The listeners are only ran if the beforeEach hooks all return true.
+</span>mediator.beforeEach ~= (SimpleEvent channelName) {
+    <span class="keyword">return</span> channelName == SimpleEvent.reset || machine.state == SimpleState.running;
+};
+
+<span class="comment">// Bind some events to the machine state changes.
+</span>machine.on!(SimpleState.stopped)(() {
+    mediator.emit!(SimpleEvent.reset);
+});
+
+<span class="comment">// Experiment with different operations.
+</span>machine.go!(SimpleState.running)();
+mediator.emit!(SimpleEvent.increment)(5);
+mediator.emit!(SimpleEvent.increment)(3);
+
+<span class="keyword">assert</span>(counter == 8, <span class="string_literal">"The counter has not incremented"</span>);
+
+machine.go!(SimpleState.stopped)();
+<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The counter was not reset by the machine"</span>);
+
+mediator.emit!(SimpleEvent.increment)(3);
+<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The counter has incremented despite the machine being stopped"</span>);
+</code></pre></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+  </p>
+</div>
+</section>
 <section class="section ddoc_module_members_section">
   <div class="ddoc_module_members">
     <ul class="ddoc_members">
   <li class="ddoc_member">
   <div class="ddoc_member_header">
   <div class="ddoc_header_anchor">
-  <a href="#Mediator" id="Mediator"><code class="code">Mediator</code></a>
+  <a href="#subscribed.event" id="subscribed.event"><code class="code">subscribed.event</code></a>
 </div>
 </div><div class="ddoc_decl">
   <section class="section">
@@ -525,7 +599,7 @@
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="Mediator"></span>struct <code class="code">Mediator</code>(params...);
+            <span class="ddoc_anchor" id="subscribed.event"></span>public import <code class="code">subscribed.event</code>;
 
           </code>
         </p>
@@ -537,188 +611,7 @@
   <section class="section ddoc_sections">
   <div class="ddoc_summary">
   <p class="para">
-    A simple mediator implementation.
- More precisely, an event collection with a unified interface and beforeEach/afterEach hooks.
-
-  </p>
-</div>
-<div class="ddoc_params">
-  <h4>Parameters</h4>
-  <table cellspacing="0" cellpadding="5" border="0" class="graybox">
-    <tbody>
-      
-    </tbody>
-  </table>
-</div>
-<div class="ddoc_examples">
-  <h4>Examples</h4>
-  <p class="para">
-    The mediator events can be strings.
-
-<section class="code_listing">
-  <div class="code_sample">
-    <div class="dlang">
-      <ol class="code_lines">
-        <li><code class="code"><span class="psymbol">Mediator</span>!(
-    <span class="string_literal">"start"</span>, <span class="keyword">void</span> <span class="keyword">delegate</span>(),
-    <span class="string_literal">"stop"</span>, <span class="keyword">void</span> <span class="keyword">delegate</span>()
-) mediator;
-
-mediator.emit!<span class="string_literal">"start"</span>();
-</code></li>
-      </ol>
-    </div>
-  </div>
-</section>
-
-  </p>
-</div><div class="ddoc_examples">
-  <h4>Examples</h4>
-  <p class="para">
-    The mediator events can be enum members.
-
-<section class="code_listing">
-  <div class="code_sample">
-    <div class="dlang">
-      <ol class="code_lines">
-        <li><code class="code"><span class="keyword">enum</span> Event { start, stop }
-
-<span class="psymbol">Mediator</span>!(
-    Event.start, <span class="keyword">void</span> <span class="keyword">delegate</span>(),
-    Event.stop, <span class="keyword">void</span> <span class="keyword">delegate</span>()
-) mediator;
-
-mediator.emit!(Event.start)();
-</code></li>
-      </ol>
-    </div>
-  </div>
-</section>
-
-  </p>
-</div><div class="ddoc_examples">
-  <h4>Examples</h4>
-  <p class="para">
-    The mediator events cannot be of mixed type.
-
-<section class="code_listing">
-  <div class="code_sample">
-    <div class="dlang">
-      <ol class="code_lines">
-        <li><code class="code"><span class="keyword">immutable</span> canCompile = <span class="keyword">__traits</span>(compiles, <span class="psymbol">Mediator</span>!(
-    <span class="string_literal">"start"</span>, <span class="keyword">void</span> <span class="keyword">delegate</span>(),
-    3, <span class="keyword">void</span> <span class="keyword">delegate</span>()
-));
-
-<span class="keyword">assert</span>(!canCompile, <span class="string_literal">"Can compile mediators with mixed index types"</span>);
-</code></li>
-      </ol>
-    </div>
-  </div>
-</section>
-
-  </p>
-</div><div class="ddoc_examples">
-  <h4>Examples</h4>
-  <p class="para">
-    The mediator can subscribe, unsubscribe and broadcast events.
-
-<section class="code_listing">
-  <div class="code_sample">
-    <div class="dlang">
-      <ol class="code_lines">
-        <li><code class="code"><span class="psymbol">Mediator</span>!(
-    <span class="string_literal">"inc"</span>, <span class="keyword">void</span> <span class="keyword">delegate</span>(),
-    <span class="string_literal">"dec"</span>, <span class="keyword">void</span> <span class="keyword">delegate</span>(),
-    <span class="string_literal">"reset counter"</span>, <span class="keyword">void</span> <span class="keyword">delegate</span>()
-) mediator;
-
-<span class="keyword">int</span> counter;
-
-<span class="keyword">void</span> increment()
-{
-    counter++;
-}
-
-<span class="keyword">void</span> decrement()
-{
-    counter--;
-}
-
-<span class="keyword">void</span> reset()
-{
-    counter = 0;
-}
-
-mediator.on!<span class="string_literal">"inc"</span>(&amp;increment);
-mediator.on!<span class="string_literal">"dec"</span>(&amp;decrement);
-mediator.on!<span class="string_literal">"reset counter"</span>(&amp;reset);
-
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"Mediator functions are called before any action is performed"</span>);
-mediator.emit!<span class="string_literal">"inc"</span>();
-<span class="keyword">assert</span>(counter == 1, <span class="string_literal">"The mediator does not call one of it's functions"</span>);
-mediator.emit!<span class="string_literal">"dec"</span>();
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The mediator does not call one of it's functions"</span>);
-
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"Mediator functions are called before any action is performed"</span>);
-mediator.emit!<span class="string_literal">"inc"</span>();
-<span class="keyword">assert</span>(counter == 1, <span class="string_literal">"The mediator does not call one of it's functions"</span>);
-mediator.emit!<span class="string_literal">"reset counter"</span>();
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The mediator does not call one of it's functions"</span>);
-
-mediator.beforeEach ~= string =&gt; <span class="keyword">false</span>;
-
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The beforeEach hook does not work"</span>);
-mediator.emit!<span class="string_literal">"inc"</span>();
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The beforeEach hook does not work"</span>);
-mediator.emit!<span class="string_literal">"dec"</span>();
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The beforeEach hook does not work"</span>);
-
-mediator.beforeEach.clear();
-
-mediator.off!<span class="string_literal">"inc"</span>(&amp;increment);
-mediator.off!<span class="string_literal">"dec"</span>(&amp;decrement);
-
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The mediator called one of it's functions while unregistering them"</span>);
-mediator.emit!<span class="string_literal">"inc"</span>();
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The mediator did not remove a listener"</span>);
-mediator.emit!<span class="string_literal">"dec"</span>();
-<span class="keyword">assert</span>(counter == 0, <span class="string_literal">"The mediator did not remove a listener"</span>);
-</code></li>
-      </ol>
-    </div>
-  </div>
-</section>
-
-  </p>
-</div>
-</section>
-<ul class="ddoc_members">
-  <li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#Mediator.IType" id="Mediator.IType"><code class="code">IType</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="Mediator.IType"></span>alias <code class="code">IType</code> = typeof(params[0]);
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    The type of the (indexing) channel names.
+    <a href="./subscribed.event.html">Go to the docs for the Event struct.</a>
   </p>
 </div>
 
@@ -729,7 +622,7 @@ mediator.emit!<span class="string_literal">"dec"</span>();
 </li><li class="ddoc_member">
   <div class="ddoc_member_header">
   <div class="ddoc_header_anchor">
-  <a href="#Mediator.beforeEach" id="Mediator.beforeEach"><code class="code">beforeEach</code></a>
+  <a href="#subscribed.event_machine" id="subscribed.event_machine"><code class="code">subscribed.event_machine</code></a>
 </div>
 </div><div class="ddoc_decl">
   <section class="section">
@@ -738,7 +631,7 @@ mediator.emit!<span class="string_literal">"dec"</span>();
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="Mediator.beforeEach"></span>Event!(bool delegate(IType)) <code class="code">beforeEach</code>;
+            <span class="ddoc_anchor" id="subscribed.event_machine"></span>public import <code class="code">subscribed.event_machine</code>;
 
           </code>
         </p>
@@ -750,7 +643,7 @@ mediator.emit!<span class="string_literal">"dec"</span>();
   <section class="section ddoc_sections">
   <div class="ddoc_summary">
   <p class="para">
-    The hook to be executed before any transition. If <code class="code">false</code> is returned, the no transition occurs.
+    <a href="./subscribed.event_machine.html">Go to the docs for the EventMachine struct.</a>
   </p>
 </div>
 
@@ -761,7 +654,7 @@ mediator.emit!<span class="string_literal">"dec"</span>();
 </li><li class="ddoc_member">
   <div class="ddoc_member_header">
   <div class="ddoc_header_anchor">
-  <a href="#Mediator.afterEach" id="Mediator.afterEach"><code class="code">afterEach</code></a>
+  <a href="#subscribed.mediator" id="subscribed.mediator"><code class="code">subscribed.mediator</code></a>
 </div>
 </div><div class="ddoc_decl">
   <section class="section">
@@ -770,7 +663,7 @@ mediator.emit!<span class="string_literal">"dec"</span>();
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="Mediator.afterEach"></span>Event!(void delegate(IType)) <code class="code">afterEach</code>;
+            <span class="ddoc_anchor" id="subscribed.mediator"></span>public import <code class="code">subscribed.mediator</code>;
 
           </code>
         </p>
@@ -782,250 +675,11 @@ mediator.emit!<span class="string_literal">"dec"</span>();
   <section class="section ddoc_sections">
   <div class="ddoc_summary">
   <p class="para">
-    The hook to be executed after a successful transition.
+    <a href="./subscribed.mediator.html">Go to the docs for the Mediator struct.</a>
   </p>
 </div>
 
 </section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#Mediator.on" id="Mediator.on"><code class="code">on</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="Mediator.on"></span>void <code class="code">on</code>(IType channel)(EventType.ListenerType[] <code class="code">listeners</code>...);
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    A function for appending <code class="code">listeners</code> to the channel event.
-
-  </p>
-</div>
-<div class="ddoc_params">
-  <h4>Parameters</h4>
-  <table cellspacing="0" cellpadding="5" border="0" class="graybox">
-    <tbody>
-      <tr class="ddoc_param_row">
-  <td scope="ddoc_param_id">
-  <code class="code">
-    <em class="term">channel</em>
-  </code>
-</td>
-<td>
-  <div class="ddoc_param_desc">
-    <p class="para">
-      The channel whose event to subscribe to.
-    </p>
-  </div>
-</td>
-</tr>
-<tr class="ddoc_param_row">
-  <td scope="ddoc_param_id">
-  <code class="code">
-    <em class="term">EventType.ListenerType[] <code class="code">listeners</code></em>
-  </code>
-</td>
-<td>
-  <div class="ddoc_param_desc">
-    <p class="para">
-      The <code class="code">listeners</code> to append.
-    </p>
-  </div>
-</td>
-</tr>
-
-    </tbody>
-  </table>
-</div>
-<div class="ddoc_see_also">
-  <h4>See Also</h4>
-  <p class="para">
-    subscribed.event.Event.append
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#Mediator.off" id="Mediator.off"><code class="code">off</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="Mediator.off"></span>void <code class="code">off</code>(IType channel)(EventType.ListenerType[] <code class="code">listeners</code>...);
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    A function for removing <code class="code">listeners</code> from the channel event.
-
-  </p>
-</div>
-<div class="ddoc_params">
-  <h4>Parameters</h4>
-  <table cellspacing="0" cellpadding="5" border="0" class="graybox">
-    <tbody>
-      <tr class="ddoc_param_row">
-  <td scope="ddoc_param_id">
-  <code class="code">
-    <em class="term">channel</em>
-  </code>
-</td>
-<td>
-  <div class="ddoc_param_desc">
-    <p class="para">
-      The channel whose event to remove from.
-    </p>
-  </div>
-</td>
-</tr>
-<tr class="ddoc_param_row">
-  <td scope="ddoc_param_id">
-  <code class="code">
-    <em class="term">EventType.ListenerType[] <code class="code">listeners</code></em>
-  </code>
-</td>
-<td>
-  <div class="ddoc_param_desc">
-    <p class="para">
-      The <code class="code">listeners</code> to remove.
-    </p>
-  </div>
-</td>
-</tr>
-
-    </tbody>
-  </table>
-</div>
-<div class="ddoc_see_also">
-  <h4>See Also</h4>
-  <p class="para">
-    subscribed.event.Event.append
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#Mediator.emit" id="Mediator.emit"><code class="code">emit</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="Mediator.emit"></span>void <code class="code">emit</code>(string channel)(EventType.ParamTypes <code class="code">params</code>);
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    Calls all the registered listeners for the channel in order.
-
-  </p>
-</div>
-<div class="ddoc_params">
-  <h4>Parameters</h4>
-  <table cellspacing="0" cellpadding="5" border="0" class="graybox">
-    <tbody>
-      <tr class="ddoc_param_row">
-  <td scope="ddoc_param_id">
-  <code class="code">
-    <em class="term">channel</em>
-  </code>
-</td>
-<td>
-  <div class="ddoc_param_desc">
-    <p class="para">
-      The channel to <code class="code">emit</code> a message to.
-    </p>
-  </div>
-</td>
-</tr>
-<tr class="ddoc_param_row">
-  <td scope="ddoc_param_id">
-  <code class="code">
-    <em class="term">EventType.ParamTypes <code class="code">params</code></em>
-  </code>
-</td>
-<td>
-  <div class="ddoc_param_desc">
-    <p class="para">
-      The param tuple to call the listeners with.
-    </p>
-  </div>
-</td>
-</tr>
-
-    </tbody>
-  </table>
-</div>
-<div class="ddoc_returns">
-  <h4>Return Value</h4>
-  <p class="para">
-    An array of results from the listeners.
-  If <code class="code">EventType.ReturnType</code> is void, then this function also returns void.
-
-
-  </p>
-</div>
-<div class="ddoc_see_also">
-  <h4>See Also</h4>
-  <p class="para">
-    subscribed.event.Event.call
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li>
-</ul>
 
 </div>
 
