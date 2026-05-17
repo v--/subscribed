@@ -1,13 +1,14 @@
 # subscribe.d
 
-[![Tests](https://github.com/v--/subscribed/workflows/Tests/badge.svg)](https://github.com/v--/subscribed/actions?query=workflow%3ATests) [![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
+[![Tests](https://github.com/v--/subscribed/workflows/Tests/badge.svg)](https://github.com/v--/subscribed/actions?query=workflow%3ATests)
+[![DUB Package](https://img.shields.io/dub/v/subscribed.svg)](http://code.dlang.org/packages/subscribed)
 
 A minimalistic library providing eventing-related structures.
 
 All structures can be publicly imported with the `subscribed` package module or as separate modules.
 A "private" module, `subscribed.slist`, is used internally and is not part of the public API.
 
-Below is a brief introduction. Automatically generated documentation can be found in http://v--.github.io/subscribed/.
+Below is a brief introduction. Automatically generated documentation can be found in <http://v--.github.io/subscribed/>.
 
 ## Modules
 
