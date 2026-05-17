@@ -114,7 +114,7 @@ struct EventMachine(State_, T = void delegate())
         }
     }
 
-    static foreach (State s; EnumMembers!State)
+    static foreach (s; EnumMembers!State)
         mixin bindStateTransitions!s;
 }
 
